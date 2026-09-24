@@ -1,0 +1,11 @@
+# 受試者資料與匯出檔：不要進版控
+data/
+P*_seq*.json
+P*_seq*_patches.csv
+P*_seq*_events.csv
+
+# 刺激影片（著作權）
+stimuli/*
+!stimuli/.gitkeep
+
+.DS_Store

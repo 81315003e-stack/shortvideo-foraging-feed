@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>短影音瀏覽實驗</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 研究者設定 -->
+<section id="screen-setup" class="screen active page">
+  <h1>短影音瀏覽實驗</h1>
+  <p class="muted">研究者設定頁｜config <span id="cfg-version"></span></p>
+  <label>受試者編號<input id="in-pid" inputmode="numeric" autocomplete="off" placeholder="例如 01"></label>
+  <label>平衡序列<select id="in-seq"></select></label>
+  <label id="in-scale-row" class="hidden">播放加速（僅測試）<input id="in-scale" type="number" value="10" min="1" step="1"></label>
+  <button id="btn-start" class="primary">開始</button>
+  <h2>本機已存資料</h2>
+  <div id="saved-list"></div>
+  <p class="muted small">資料只存在這台裝置的瀏覽器裡。每位受試者結束後請立即匯出，並將檔案存到研究資料夾（不要放進 GitHub）。</p>
+</section>
+
+<!-- 受試者說明 -->
+<section id="screen-intro" class="screen page center">
+  <div class="big-text">
+    <p>等一下會播放一些短影片。</p>
+    <p>請像平常在手機上看影片一樣，<br>想看就看，想換就往上滑。</p>
+    <p>先練習兩支。</p>
+  </div>
+  <button id="btn-intro-go" class="primary huge">開始</button>
+</section>
+
+<!-- Feed -->
+<section id="screen-feed" class="screen feed">
+  <div id="stage"></div>
+
+  <div id="ov-end" class="overlay hidden">
+    <button id="btn-end-next" class="end-btn" aria-label="下一支">
+      <svg viewBox="0 0 120 120" class="ring">
+        <circle cx="60" cy="60" r="54" class="ring-bg"/>
+        <circle cx="60" cy="60" r="54" class="ring-fg" id="end-ring-fg"/>
+      </svg>
+      <span class="end-label">下一支</span>
+      <span class="end-count" id="end-count">10</span>
+    </button>
+  </div>
+
+  <div id="ov-confirm" class="overlay dim hidden">
+    <div class="sheet">
+      <p>要看下一支嗎？</p>
+      <button id="btn-confirm-next" class="primary huge">下一支</button>
+      <button id="btn-confirm-stay" class="secondary huge">繼續看</button>
+    </div>
+  </div>
+
+  <div id="ov-delay" class="overlay dim hidden">
+    <div class="sheet">
+      <p>即將播放下一支 <span id="delay-count">5</span></p>
+      <button id="btn-delay-cancel" class="secondary huge">取消，繼續看</button>
+    </div>
+  </div>
+
+  <div id="sync-flash" class="hidden"></div>
+  <div id="debug" class="hidden"></div>
+</section>
+
+<!-- 時間估計 -->
+<section id="screen-estimate" class="screen page center">
+  <p class="big-text">您覺得剛剛這一段，<br>大約看了幾分鐘？</p>
+  <div class="stepper">
+    <button id="est-minus" class="step">−</button>
+    <input id="est-val" inputmode="decimal" placeholder="?">
+    <button id="est-plus" class="step">＋</button>
+  </div>
+  <p class="muted">分鐘</p>
+  <button id="btn-est-ok" class="primary huge">確定</button>
+</section>
+
+<!-- 休息 -->
+<section id="screen-break" class="screen page center">
+  <p class="big-text" id="break-msg">這一段結束了，請稍等研究人員。</p>
+  <button id="btn-break-go" class="primary huge">繼續</button>
+</section>
+
+<!-- 結束 -->
+<section id="screen-done" class="screen page center">
+  <p class="big-text">謝謝您！</p>
+  <button id="btn-done-export" class="secondary">匯出資料（研究者）</button>
+  <button id="btn-done-home" class="secondary">回到設定頁</button>
+</section>
+
+<!-- 研究者選單：左上角 1.5 秒內點三下 -->
+<div id="corner"></div>
+<div id="researcher-menu" class="hidden">
+  <div class="sheet">
+    <p>研究者選單</p>
+    <button id="rm-export" class="secondary">匯出目前資料</button>
+    <button id="rm-endblock" class="secondary">結束這個 block</button>
+    <button id="rm-abort" class="danger">中止 session</button>
+    <button id="rm-close" class="primary">關閉</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/logger.js"></script>
+<script src="js/player.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

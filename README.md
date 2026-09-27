@@ -13,10 +13,12 @@
 
 ## 流程
 
-設定頁（研究者） → 說明 → 練習（2 支，不計時） → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出
+設定頁（研究者） → 說明 → 練習（2 支，不計時） → Block 1 → 時間估計 → 休息 → Block 2 → … → Block 4 → 時間估計 → 結束與匯出
 
-- 平衡序列 1–4：摩擦順序（零→微／微→零）× 影片組（A／B）
-- 每個正式 block 有時間預算（預設 10 分鐘），時間到即結束
+- 4 個條件各一個 block：零摩擦／微摩擦 × 高 scent／低 scent
+- 四組影片：HS-A、HS-B（高 scent）、LS-A、LS-B（低 scent），每組 30 支
+- 平衡序列 1–8：Williams 平衡拉丁方格（4 種條件順序）× 影片組對應（α：零摩擦用 A 組；β：對調）。受試者人數為 8 的倍數時完全平衡
+- 每個正式 block 有時間預算（預設 5 分鐘），時間到即結束
 - 每個 block 開始時有 300 ms 白色閃光（`sync_flash`），用來和螢幕錄影、攝影機畫面對時
 - 研究者選單：左上角 1.5 秒內點三下（匯出、結束 block、中止）
 
@@ -45,7 +47,8 @@
 | 欄位 | 說明 |
 |---|---|
 | `trial` / `feed_pos` / `visit_n` | 第幾個 patch／在 feed 中的位置／第幾次造訪 |
-| `scent` / `false_scent` | 刺激編碼（見 `js/config.js`） |
+| `block_scent` / `set` | 該 block 的 scent 條件與影片組 |
+| `scent` / `false_scent` | 該支影片的刺激編碼（見 `js/config.js`、`docs/CODEBOOK.md`） |
 | `dwell_ms` | 停留時間（含暫停與結束畫面） |
 | `watched_ms` / `prop_watched` / `completed` | 實際播放長度、觀看比例、是否播完 |
 | `first_touch_ms` | 進入 patch 到第一次觸碰（沒碰就是空值） |
@@ -74,3 +77,6 @@
 ## 相關文件
 
 - `docs/DESIGN_NOTES.md`：設計決策紀錄
+- `docs/STIMULI_CRITERIA.md`：刺激影片選片標準（片庫規模、納入排除、配對、剪輯轉檔、前測）
+- `docs/CODEBOOK.md`：刺激影片編碼簿（開場 scent、scent–yield mismatch、信度程序）
+- `docs/coding_sheet_template.csv`：編碼表範本（每位編碼者一份，一支影片一列）

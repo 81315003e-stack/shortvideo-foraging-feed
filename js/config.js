@@ -3,10 +3,11 @@
  * 每次正式施測前，請把 version 改成新的值；它會寫進每一份資料的 meta。
  */
 window.EXP_CONFIG = {
-  version: "0.1.0-prototype",
+  version: "0.2.0-prototype",
 
   // 每個正式 block 的時間預算（秒）。時間到就結束 block，不論看到第幾支。
-  blockDurationSec: 600,
+  // proposal：4 個 block，每個 5 分鐘。
+  blockDurationSec: 300,
 
   // 影片結束後的「下一支」倒數畫面，可依摩擦條件分開設定。
   //   enabled: false  → 影片結束立即自動播下一支（outcome = end_auto）
@@ -46,49 +47,162 @@ window.EXP_CONFIG = {
     ]
   },
 
-  // 平衡設計：摩擦順序（Z→M / M→Z）× 影片組（A/B）= 4 種排序。
+  /*
+   * 平衡設計：4 個條件（摩擦 × scent）各一個 block。
+   *   條件順序：Williams 平衡拉丁方格（4 種順序，每個條件在每個位置出現一次，
+   *             且每個條件緊接在其他條件之後各一次，可平衡一階延宕效果）
+   *   影片組對應：α（零摩擦用 A 組、微摩擦用 B 組）與 β（對調）
+   *   4 種順序 × 2 種對應 = 8 個序列；受試者人數為 8 的倍數時完全平衡（例如 16 人）
+   */
   sequences: {
-    "1": [ { friction: "zero",  set: "A" }, { friction: "micro", set: "B" } ],
-    "2": [ { friction: "micro", set: "A" }, { friction: "zero",  set: "B" } ],
-    "3": [ { friction: "zero",  set: "B" }, { friction: "micro", set: "A" } ],
-    "4": [ { friction: "micro", set: "B" }, { friction: "zero",  set: "A" } ]
+    "1": [ { friction: "zero", scent: "high", set: "HS-A" }, { friction: "zero", scent: "low", set: "LS-A" }, { friction: "micro", scent: "low", set: "LS-B" }, { friction: "micro", scent: "high", set: "HS-B" } ],
+    "2": [ { friction: "zero", scent: "low", set: "LS-A" }, { friction: "micro", scent: "high", set: "HS-B" }, { friction: "zero", scent: "high", set: "HS-A" }, { friction: "micro", scent: "low", set: "LS-B" } ],
+    "3": [ { friction: "micro", scent: "high", set: "HS-B" }, { friction: "micro", scent: "low", set: "LS-B" }, { friction: "zero", scent: "low", set: "LS-A" }, { friction: "zero", scent: "high", set: "HS-A" } ],
+    "4": [ { friction: "micro", scent: "low", set: "LS-B" }, { friction: "zero", scent: "high", set: "HS-A" }, { friction: "micro", scent: "high", set: "HS-B" }, { friction: "zero", scent: "low", set: "LS-A" } ],
+    "5": [ { friction: "zero", scent: "high", set: "HS-B" }, { friction: "zero", scent: "low", set: "LS-B" }, { friction: "micro", scent: "low", set: "LS-A" }, { friction: "micro", scent: "high", set: "HS-A" } ],
+    "6": [ { friction: "zero", scent: "low", set: "LS-B" }, { friction: "micro", scent: "high", set: "HS-A" }, { friction: "zero", scent: "high", set: "HS-B" }, { friction: "micro", scent: "low", set: "LS-A" } ],
+    "7": [ { friction: "micro", scent: "high", set: "HS-A" }, { friction: "micro", scent: "low", set: "LS-A" }, { friction: "zero", scent: "low", set: "LS-B" }, { friction: "zero", scent: "high", set: "HS-B" } ],
+    "8": [ { friction: "micro", scent: "low", set: "LS-A" }, { friction: "zero", scent: "high", set: "HS-B" }, { friction: "micro", scent: "high", set: "HS-A" }, { friction: "zero", scent: "low", set: "LS-B" } ]
   },
 
   /*
-   * 刺激材料。src 為 null 時以色塊模擬影片（prototype 用）。
-   * 放入真實影片後：src 填相對路徑（例如 "stimuli/A01.mp4"），durationSec 以實際長度為準。
-   * cues：影片內 scent 事件的時間點（秒），供離開點對齊分析，例如
-   *   [{ t: 2.5, label: "hook" }, { t: 41, label: "conflict_peak" }, { t: 80, label: "reveal" }]
-   * falseScent：依客觀判準（劇情詐欺、資訊產出低）預先編碼。
+   * 刺激材料：四組，每組 30 支（pilot 可先用 20 支）。src 為 null 時以色塊模擬影片。
+   * 放入真實影片後：src 填相對路徑（例如 "stimuli/HS-A01.mp4"），durationSec 以實際長度為準。
+   * 各欄位的來源見 docs/CODEBOOK.md 的「編碼結果如何進入實驗介面」：
+   *   scent      ← scent_class
+   *   falseScent ← mismatch（高 scent 組前 8 支固定為 M M F M F M M F，見 docs/STIMULI_CRITERIA.md 第 5 節）
+   *   cues       ← hook_onset_s、plot_event_times、yield_collapse_s，例如
+   *     [{ t: 2.5, label: "hook" }, { t: 41, label: "event" }, { t: 70, label: "collapse" }]
+   * 目前的長度與 mismatch 是 prototype 用的假資料。
    */
   stimulusSets: {
-    A: [
-      { id: "A01", scent: "high", falseScent: true,  durationSec: 95,  src: null, cues: [] },
-      { id: "A02", scent: "low",  falseScent: false, durationSec: 80,  src: null, cues: [] },
-      { id: "A03", scent: "high", falseScent: false, durationSec: 110, src: null, cues: [] },
-      { id: "A04", scent: "high", falseScent: true,  durationSec: 70,  src: null, cues: [] },
-      { id: "A05", scent: "low",  falseScent: false, durationSec: 100, src: null, cues: [] },
-      { id: "A06", scent: "high", falseScent: true,  durationSec: 90,  src: null, cues: [] },
-      { id: "A07", scent: "low",  falseScent: false, durationSec: 85,  src: null, cues: [] },
-      { id: "A08", scent: "low",  falseScent: false, durationSec: 75,  src: null, cues: [] },
-      { id: "A09", scent: "high", falseScent: false, durationSec: 105, src: null, cues: [] },
-      { id: "A10", scent: "low",  falseScent: false, durationSec: 95,  src: null, cues: [] },
-      { id: "A11", scent: "high", falseScent: true,  durationSec: 80,  src: null, cues: [] },
-      { id: "A12", scent: "low",  falseScent: false, durationSec: 90,  src: null, cues: [] }
+    "HS-A": [
+      { id: "HS-A01", scent: "high", falseScent: true , durationSec: 65, src: null, cues: [] },
+      { id: "HS-A02", scent: "high", falseScent: true , durationSec: 87, src: null, cues: [] },
+      { id: "HS-A03", scent: "high", falseScent: false, durationSec: 88, src: null, cues: [] },
+      { id: "HS-A04", scent: "high", falseScent: true , durationSec: 69, src: null, cues: [] },
+      { id: "HS-A05", scent: "high", falseScent: false, durationSec: 60, src: null, cues: [] },
+      { id: "HS-A06", scent: "high", falseScent: true , durationSec: 61, src: null, cues: [] },
+      { id: "HS-A07", scent: "high", falseScent: true , durationSec: 77, src: null, cues: [] },
+      { id: "HS-A08", scent: "high", falseScent: false, durationSec: 87, src: null, cues: [] },
+      { id: "HS-A09", scent: "high", falseScent: true , durationSec: 85, src: null, cues: [] },
+      { id: "HS-A10", scent: "high", falseScent: false, durationSec: 61, src: null, cues: [] },
+      { id: "HS-A11", scent: "high", falseScent: true , durationSec: 61, src: null, cues: [] },
+      { id: "HS-A12", scent: "high", falseScent: false, durationSec: 83, src: null, cues: [] },
+      { id: "HS-A13", scent: "high", falseScent: true , durationSec: 77, src: null, cues: [] },
+      { id: "HS-A14", scent: "high", falseScent: false, durationSec: 64, src: null, cues: [] },
+      { id: "HS-A15", scent: "high", falseScent: true , durationSec: 86, src: null, cues: [] },
+      { id: "HS-A16", scent: "high", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "HS-A17", scent: "high", falseScent: false, durationSec: 80, src: null, cues: [] },
+      { id: "HS-A18", scent: "high", falseScent: true , durationSec: 82, src: null, cues: [] },
+      { id: "HS-A19", scent: "high", falseScent: false, durationSec: 69, src: null, cues: [] },
+      { id: "HS-A20", scent: "high", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "HS-A21", scent: "high", falseScent: true , durationSec: 81, src: null, cues: [] },
+      { id: "HS-A22", scent: "high", falseScent: true , durationSec: 79, src: null, cues: [] },
+      { id: "HS-A23", scent: "high", falseScent: false, durationSec: 69, src: null, cues: [] },
+      { id: "HS-A24", scent: "high", falseScent: false, durationSec: 86, src: null, cues: [] },
+      { id: "HS-A25", scent: "high", falseScent: true , durationSec: 89, src: null, cues: [] },
+      { id: "HS-A26", scent: "high", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "HS-A27", scent: "high", falseScent: false, durationSec: 79, src: null, cues: [] },
+      { id: "HS-A28", scent: "high", falseScent: true , durationSec: 77, src: null, cues: [] },
+      { id: "HS-A29", scent: "high", falseScent: false, durationSec: 71, src: null, cues: [] },
+      { id: "HS-A30", scent: "high", falseScent: true , durationSec: 67, src: null, cues: [] }
     ],
-    B: [
-      { id: "B01", scent: "low",  falseScent: false, durationSec: 90,  src: null, cues: [] },
-      { id: "B02", scent: "high", falseScent: true,  durationSec: 85,  src: null, cues: [] },
-      { id: "B03", scent: "high", falseScent: false, durationSec: 100, src: null, cues: [] },
-      { id: "B04", scent: "low",  falseScent: false, durationSec: 75,  src: null, cues: [] },
-      { id: "B05", scent: "high", falseScent: true,  durationSec: 95,  src: null, cues: [] },
-      { id: "B06", scent: "low",  falseScent: false, durationSec: 110, src: null, cues: [] },
-      { id: "B07", scent: "high", falseScent: true,  durationSec: 70,  src: null, cues: [] },
-      { id: "B08", scent: "low",  falseScent: false, durationSec: 80,  src: null, cues: [] },
-      { id: "B09", scent: "high", falseScent: false, durationSec: 90,  src: null, cues: [] },
-      { id: "B10", scent: "low",  falseScent: false, durationSec: 105, src: null, cues: [] },
-      { id: "B11", scent: "high", falseScent: true,  durationSec: 85,  src: null, cues: [] },
-      { id: "B12", scent: "low",  falseScent: false, durationSec: 95,  src: null, cues: [] }
+    "HS-B": [
+      { id: "HS-B01", scent: "high", falseScent: true , durationSec: 75, src: null, cues: [] },
+      { id: "HS-B02", scent: "high", falseScent: true , durationSec: 70, src: null, cues: [] },
+      { id: "HS-B03", scent: "high", falseScent: false, durationSec: 73, src: null, cues: [] },
+      { id: "HS-B04", scent: "high", falseScent: true , durationSec: 85, src: null, cues: [] },
+      { id: "HS-B05", scent: "high", falseScent: false, durationSec: 68, src: null, cues: [] },
+      { id: "HS-B06", scent: "high", falseScent: true , durationSec: 75, src: null, cues: [] },
+      { id: "HS-B07", scent: "high", falseScent: true , durationSec: 68, src: null, cues: [] },
+      { id: "HS-B08", scent: "high", falseScent: false, durationSec: 65, src: null, cues: [] },
+      { id: "HS-B09", scent: "high", falseScent: true , durationSec: 70, src: null, cues: [] },
+      { id: "HS-B10", scent: "high", falseScent: false, durationSec: 77, src: null, cues: [] },
+      { id: "HS-B11", scent: "high", falseScent: true , durationSec: 64, src: null, cues: [] },
+      { id: "HS-B12", scent: "high", falseScent: false, durationSec: 69, src: null, cues: [] },
+      { id: "HS-B13", scent: "high", falseScent: true , durationSec: 69, src: null, cues: [] },
+      { id: "HS-B14", scent: "high", falseScent: false, durationSec: 72, src: null, cues: [] },
+      { id: "HS-B15", scent: "high", falseScent: true , durationSec: 62, src: null, cues: [] },
+      { id: "HS-B16", scent: "high", falseScent: false, durationSec: 80, src: null, cues: [] },
+      { id: "HS-B17", scent: "high", falseScent: false, durationSec: 85, src: null, cues: [] },
+      { id: "HS-B18", scent: "high", falseScent: true , durationSec: 89, src: null, cues: [] },
+      { id: "HS-B19", scent: "high", falseScent: false, durationSec: 90, src: null, cues: [] },
+      { id: "HS-B20", scent: "high", falseScent: false, durationSec: 89, src: null, cues: [] },
+      { id: "HS-B21", scent: "high", falseScent: true , durationSec: 67, src: null, cues: [] },
+      { id: "HS-B22", scent: "high", falseScent: true , durationSec: 81, src: null, cues: [] },
+      { id: "HS-B23", scent: "high", falseScent: false, durationSec: 89, src: null, cues: [] },
+      { id: "HS-B24", scent: "high", falseScent: false, durationSec: 86, src: null, cues: [] },
+      { id: "HS-B25", scent: "high", falseScent: true , durationSec: 66, src: null, cues: [] },
+      { id: "HS-B26", scent: "high", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "HS-B27", scent: "high", falseScent: false, durationSec: 62, src: null, cues: [] },
+      { id: "HS-B28", scent: "high", falseScent: true , durationSec: 84, src: null, cues: [] },
+      { id: "HS-B29", scent: "high", falseScent: false, durationSec: 65, src: null, cues: [] },
+      { id: "HS-B30", scent: "high", falseScent: true , durationSec: 86, src: null, cues: [] }
+    ],
+    "LS-A": [
+      { id: "LS-A01", scent: "low", falseScent: false, durationSec: 68, src: null, cues: [] },
+      { id: "LS-A02", scent: "low", falseScent: false, durationSec: 76, src: null, cues: [] },
+      { id: "LS-A03", scent: "low", falseScent: false, durationSec: 61, src: null, cues: [] },
+      { id: "LS-A04", scent: "low", falseScent: false, durationSec: 89, src: null, cues: [] },
+      { id: "LS-A05", scent: "low", falseScent: false, durationSec: 72, src: null, cues: [] },
+      { id: "LS-A06", scent: "low", falseScent: false, durationSec: 61, src: null, cues: [] },
+      { id: "LS-A07", scent: "low", falseScent: false, durationSec: 84, src: null, cues: [] },
+      { id: "LS-A08", scent: "low", falseScent: false, durationSec: 68, src: null, cues: [] },
+      { id: "LS-A09", scent: "low", falseScent: false, durationSec: 67, src: null, cues: [] },
+      { id: "LS-A10", scent: "low", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "LS-A11", scent: "low", falseScent: false, durationSec: 60, src: null, cues: [] },
+      { id: "LS-A12", scent: "low", falseScent: false, durationSec: 69, src: null, cues: [] },
+      { id: "LS-A13", scent: "low", falseScent: false, durationSec: 79, src: null, cues: [] },
+      { id: "LS-A14", scent: "low", falseScent: false, durationSec: 84, src: null, cues: [] },
+      { id: "LS-A15", scent: "low", falseScent: false, durationSec: 67, src: null, cues: [] },
+      { id: "LS-A16", scent: "low", falseScent: false, durationSec: 67, src: null, cues: [] },
+      { id: "LS-A17", scent: "low", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "LS-A18", scent: "low", falseScent: false, durationSec: 85, src: null, cues: [] },
+      { id: "LS-A19", scent: "low", falseScent: false, durationSec: 62, src: null, cues: [] },
+      { id: "LS-A20", scent: "low", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "LS-A21", scent: "low", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "LS-A22", scent: "low", falseScent: false, durationSec: 76, src: null, cues: [] },
+      { id: "LS-A23", scent: "low", falseScent: false, durationSec: 77, src: null, cues: [] },
+      { id: "LS-A24", scent: "low", falseScent: false, durationSec: 60, src: null, cues: [] },
+      { id: "LS-A25", scent: "low", falseScent: false, durationSec: 66, src: null, cues: [] },
+      { id: "LS-A26", scent: "low", falseScent: false, durationSec: 77, src: null, cues: [] },
+      { id: "LS-A27", scent: "low", falseScent: false, durationSec: 70, src: null, cues: [] },
+      { id: "LS-A28", scent: "low", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "LS-A29", scent: "low", falseScent: false, durationSec: 68, src: null, cues: [] },
+      { id: "LS-A30", scent: "low", falseScent: false, durationSec: 80, src: null, cues: [] }
+    ],
+    "LS-B": [
+      { id: "LS-B01", scent: "low", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "LS-B02", scent: "low", falseScent: false, durationSec: 84, src: null, cues: [] },
+      { id: "LS-B03", scent: "low", falseScent: false, durationSec: 65, src: null, cues: [] },
+      { id: "LS-B04", scent: "low", falseScent: false, durationSec: 73, src: null, cues: [] },
+      { id: "LS-B05", scent: "low", falseScent: false, durationSec: 88, src: null, cues: [] },
+      { id: "LS-B06", scent: "low", falseScent: false, durationSec: 62, src: null, cues: [] },
+      { id: "LS-B07", scent: "low", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "LS-B08", scent: "low", falseScent: false, durationSec: 89, src: null, cues: [] },
+      { id: "LS-B09", scent: "low", falseScent: false, durationSec: 79, src: null, cues: [] },
+      { id: "LS-B10", scent: "low", falseScent: false, durationSec: 82, src: null, cues: [] },
+      { id: "LS-B11", scent: "low", falseScent: false, durationSec: 90, src: null, cues: [] },
+      { id: "LS-B12", scent: "low", falseScent: false, durationSec: 63, src: null, cues: [] },
+      { id: "LS-B13", scent: "low", falseScent: false, durationSec: 85, src: null, cues: [] },
+      { id: "LS-B14", scent: "low", falseScent: false, durationSec: 81, src: null, cues: [] },
+      { id: "LS-B15", scent: "low", falseScent: false, durationSec: 66, src: null, cues: [] },
+      { id: "LS-B16", scent: "low", falseScent: false, durationSec: 72, src: null, cues: [] },
+      { id: "LS-B17", scent: "low", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "LS-B18", scent: "low", falseScent: false, durationSec: 66, src: null, cues: [] },
+      { id: "LS-B19", scent: "low", falseScent: false, durationSec: 79, src: null, cues: [] },
+      { id: "LS-B20", scent: "low", falseScent: false, durationSec: 65, src: null, cues: [] },
+      { id: "LS-B21", scent: "low", falseScent: false, durationSec: 69, src: null, cues: [] },
+      { id: "LS-B22", scent: "low", falseScent: false, durationSec: 69, src: null, cues: [] },
+      { id: "LS-B23", scent: "low", falseScent: false, durationSec: 82, src: null, cues: [] },
+      { id: "LS-B24", scent: "low", falseScent: false, durationSec: 74, src: null, cues: [] },
+      { id: "LS-B25", scent: "low", falseScent: false, durationSec: 89, src: null, cues: [] },
+      { id: "LS-B26", scent: "low", falseScent: false, durationSec: 80, src: null, cues: [] },
+      { id: "LS-B27", scent: "low", falseScent: false, durationSec: 60, src: null, cues: [] },
+      { id: "LS-B28", scent: "low", falseScent: false, durationSec: 81, src: null, cues: [] },
+      { id: "LS-B29", scent: "low", falseScent: false, durationSec: 78, src: null, cues: [] },
+      { id: "LS-B30", scent: "low", falseScent: false, durationSec: 79, src: null, cues: [] }
     ]
   }
 };

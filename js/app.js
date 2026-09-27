@@ -30,7 +30,9 @@
     Object.keys(C.sequences).forEach(function (k) {
       const o = document.createElement("option");
       o.value = k;
-      o.textContent = k + "：" + C.sequences[k].map(function (b) { return (b.friction === "zero" ? "零摩擦" : "微摩擦") + "(" + b.set + ")"; }).join(" → ");
+      o.textContent = k + "：" + C.sequences[k].map(function (b) {
+        return (b.friction === "zero" ? "零" : "微") + (b.scent === "high" ? "高" : "低") + "(" + b.set + ")";
+      }).join(" → ");
       seqSel.appendChild(o);
     });
     $("#in-scale-row").classList.toggle("hidden", !DEBUG);
@@ -66,10 +68,11 @@
 
     const blocks = [];
     if (C.practice.enabled) {
-      blocks.push({ name: "practice", practice: true, friction: C.practice.friction, set: "P", items: C.practice.items, durationSec: null });
+      blocks.push({ name: "practice", practice: true, friction: C.practice.friction, scent: "na", set: "P", items: C.practice.items, durationSec: null });
     }
     C.sequences[seq].forEach(function (b, i) {
-      blocks.push({ name: "block" + (i + 1), practice: false, friction: b.friction, set: b.set,
+      if (!C.stimulusSets[b.set]) throw new Error("config 找不到影片組：" + b.set);
+      blocks.push({ name: "block" + (i + 1), practice: false, friction: b.friction, scent: b.scent, set: b.set,
         items: C.stimulusSets[b.set], durationSec: C.blockDurationSec });
     });
 
@@ -88,7 +91,7 @@
     const def = S.blocks[S.blockIdx];
     B = { def: def, pos: -1, trial: 0, visits: {}, patch: null, player: null, state: "idle",
           startT: L.now(), timers: [], endScreenT: null };
-    L.log("block_start", ctx({ durationSec: def.durationSec }));
+    L.log("block_start", ctx({ durationSec: def.durationSec, block_scent: def.scent, set: def.set }));
     show("screen-feed");
     syncFlash();
     if (def.durationSec) {
@@ -112,7 +115,7 @@
     B.state = "ended";
     const dur = L.now() - B.startT;
     L.log("block_end", ctx({ reason: reason, actualMs: dur }));
-    L.addBlock({ block: B.def.name, practice: B.def.practice, friction: B.def.friction, set: B.def.set,
+    L.addBlock({ block: B.def.name, practice: B.def.practice, friction: B.def.friction, block_scent: B.def.scent, set: B.def.set,
                  start_t: B.startT, end_t: L.now(), actual_ms: dur, end_reason: reason,
                  n_patches: B.trial, time_estimate_min: null });
     if (B.def.practice) { show("screen-break"); $("#break-msg").textContent = "練習結束。準備好了就開始。"; return; }
@@ -138,7 +141,7 @@
     B.visits[pos] = (B.visits[pos] || 0) + 1;
     B.patch = {
       participant: S.pid, sequence: S.seq, block: B.def.name, practice: B.def.practice,
-      friction: B.def.friction, set: B.def.set, trial: B.trial, feed_pos: pos,
+      friction: B.def.friction, block_scent: B.def.scent, set: B.def.set, trial: B.trial, feed_pos: pos,
       video_id: item.id, scent: item.scent, false_scent: item.falseScent,
       via: via, visit_n: B.visits[pos],
       start_t: L.now(), end_t: null, dwell_ms: null, watched_ms: null, duration_ms: null, prop_watched: null,
@@ -362,7 +365,7 @@
     const raw = $("#est-val").value.trim();
     if (raw === "" || isNaN(Number(raw))) { $("#est-val").focus(); return; }
     const v = Number(raw);
-    L.log("time_estimate", { block: B.def.name, estimate_min: v });
+    L.log("time_estimate", { block: B.def.name, friction: B.def.friction, block_scent: B.def.scent, estimate_min: v });
     const snap = L.snapshot();
     const b = snap.blocks[snap.blocks.length - 1];
     if (b) b.time_estimate_min = v;
@@ -403,7 +406,7 @@
     const d = $("#debug");
     d.classList.remove("hidden");
     if (!B || !B.patch) { d.textContent = ""; return; }
-    d.textContent = B.def.name + "｜" + B.def.friction + "｜#" + B.patch.trial + " " + B.patch.video_id +
+    d.textContent = B.def.name + "｜" + B.def.friction + "×" + B.def.scent + "｜" + B.def.set + "｜#" + B.patch.trial + " " + B.patch.video_id +
       "｜scent:" + B.patch.scent + (B.patch.false_scent ? "(false)" : "") + "｜" + B.state;
   }
   if (DEBUG) setInterval(updateDebug, 250);

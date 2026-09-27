@@ -14,9 +14,16 @@
 <section id="screen-setup" class="screen active page">
   <h1>短影音瀏覽實驗</h1>
   <p class="muted">研究者設定頁｜config <span id="cfg-version"></span></p>
-  <label>受試者編號<input id="in-pid" inputmode="numeric" autocomplete="off" placeholder="例如 01"></label>
-  <label>平衡序列<select id="in-seq"></select></label>
+  <div id="assign-box" class="assign"></div>
+  <div id="manual-fields">
+    <label>受試者編號<input id="in-pid" autocomplete="off" placeholder="例如 T01"></label>
+    <label>平衡序列<select id="in-seq"></select></label>
+  </div>
   <label id="in-scale-row" class="hidden">播放加速（僅測試）<input id="in-scale" type="number" value="10" min="1" step="1"></label>
+  <div id="dup-warn" class="dup hidden">
+    <p id="dup-msg"></p>
+    <label class="check"><input type="checkbox" id="dup-ok"> 我確認要重新施測</label>
+  </div>
   <button id="btn-start" class="primary">開始</button>
   <h2>本機已存資料</h2>
   <div id="saved-list"></div>

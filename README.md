@@ -7,8 +7,8 @@
 ## 執行
 
 - 本機：直接用瀏覽器開 `index.html`，或在專案資料夾執行 `python3 -m http.server 8000` 後開 `http://localhost:8000`
-- 手機施測：開啟 GitHub Pages（Settings → Pages → Deploy from branch → `main` / root），用手機開網址
-- 測試模式：網址加 `?debug=1`，頂端顯示目前影片、scent、狀態，並可設定播放加速
+- 手機施測：用**受試者專屬網址**開啟，例如 `https://81315003e-stack.github.io/shortvideo-foraging-feed/?p=P01&k=6737`。網址決定編號與平衡序列，清單見 `docs/ASSIGNMENTS.md`
+- 測試模式：網址加 `?debug=1`，頂端顯示目前影片、scent、狀態，並可設定播放加速；沒有專屬網址時可手動輸入編號與序列
 - 桌機測試：方向鍵上／下 = 滑動，空白鍵 = 輕點
 
 ## 流程
@@ -18,6 +18,7 @@
 - 4 個條件各一個 block：零摩擦／微摩擦 × 高 scent／低 scent
 - 四組影片：HS-A、HS-B（高 scent）、LS-A、LS-B（低 scent），每組 30 支
 - 平衡序列 1–8：Williams 平衡拉丁方格（4 種條件順序）× 影片組對應（α：零摩擦用 A 組；β：對調）。受試者人數為 8 的倍數時完全平衡
+- 序列由指派表決定（每 8 人一輪隨機打亂），研究者不在現場選擇
 - 每個正式 block 有時間預算（預設 5 分鐘），時間到即結束
 - 每個 block 開始時有 300 ms 白色閃光（`sync_flash`），用來和螢幕錄影、攝影機畫面對時
 - 研究者選單：左上角 1.5 秒內點三下（匯出、結束 block、中止）
@@ -80,3 +81,5 @@
 - `docs/STIMULI_CRITERIA.md`：刺激影片選片標準（片庫規模、納入排除、配對、剪輯轉檔、前測）
 - `docs/CODEBOOK.md`：刺激影片編碼簿（開場 scent、scent–yield mismatch、信度程序）
 - `docs/coding_sheet_template.csv`：編碼表範本（每位編碼者一份，一支影片一列）
+- `docs/ASSIGNMENTS.md`：受試者指派表與專屬網址、補位規則
+- `tools/make_assignments.py`：產生指派表（固定亂數種子，可重現）

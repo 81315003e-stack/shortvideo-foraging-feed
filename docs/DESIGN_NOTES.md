@@ -41,3 +41,19 @@
 ### D9. 觸控門檻（advance 80px、abort 20px、tap 12px / 350ms）
 - 理由：暫定值
 - 狀態：高齡者手勢差異大，pilot 時用 events.csv 的 `dy` 分布校正
+
+## 2026-09-27　v0.2.0
+
+### D10. 改為 4 個 block，每個條件一個 block
+- 決策：依 proposal，摩擦 × scent 四個條件各一個 5 分鐘 block；四組影片（HS-A、HS-B、LS-A、LS-B）
+- 考慮過的替代方案：2 個摩擦 block、scent 在 feed 內混排（較接近真實 feed、H3 觀察窗較長、平衡較簡單）；未採用，維持 proposal 設計
+- 平衡：Williams 平衡拉丁方格（4 種順序，每個條件在每個位置各一次，一階延宕效果平衡）× 影片組對應（α／β）= 8 個序列
+- 影響：受試者人數以 8 的倍數最理想（16 人）；看得慢的受試者在高 scent block 可能只看到 3–4 支，H3 主要依賴前 8 個位置的固定 mismatch 排列（見 STIMULI_CRITERIA.md 第 5 節）
+
+### D11. 片庫規模：每組 30 支
+- 理由：涵蓋平均每支停留 10 秒以上的受試者；更快的受試者滑完片庫時記錄 `stimuli_exhausted`，分析時另外標記
+- 狀態：pilot 先用每組 20 支，依高齡者實際停留時間分布調整
+
+### D12. 刺激材料選片與編碼
+- 見 STIMULI_CRITERIA.md 與 CODEBOOK.md
+- 高／低 scent 與 mismatch 由規則判定，不由編碼者自由判斷；暫定門檻（鉤子 ≤ 5 秒、崩壞點早於 60%、前測 3.5／2.5）待 pilot 與編碼者訓練後確認

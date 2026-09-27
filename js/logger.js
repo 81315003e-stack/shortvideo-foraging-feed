@@ -69,7 +69,7 @@ window.Logger = (function () {
 
   function exportData(data) {
     data = data || snapshot();
-    const base = "P" + data.meta.participant + "_seq" + data.meta.sequence + "_" + data.meta.startedWall;
+    const base = data.meta.participant + "_seq" + data.meta.sequence + "_" + data.meta.startedWall;
     download(base + ".json", JSON.stringify(data, null, 2), "application/json");
     download(base + "_patches.csv", "﻿" + toCSV(data.patches), "text/csv");
     download(base + "_events.csv", "﻿" + toCSV(data.events), "text/csv");

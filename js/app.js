@@ -25,21 +25,77 @@
   }
 
   // ================= 設定頁 =================
+  function seqLabel(k) {
+    return C.sequences[k].map(function (b) {
+      return (b.friction === "zero" ? "零" : "微") + (b.scent === "high" ? "高" : "低") + "(" + b.set + ")";
+    }).join(" → ");
+  }
+
+  /*
+   * 受試者身分由網址決定：index.html?p={編號}&k={檢查碼}
+   *   - 編號與檢查碼都要符合 config.assignments，才能開始；序列由指派表決定，研究者不能改
+   *   - 沒有網址參數時，只有測試模式（?debug=1）可以手動輸入編號與序列
+   */
+  let ASSIGNED = null;   // { pid, seq } 或 null
+  function resolveAssignment() {
+    const p = (params.get("p") || "").trim();
+    const k = (params.get("k") || "").trim().toLowerCase();
+    if (!p) return { status: "none" };
+    const a = (C.assignments || {})[p];
+    if (!a) return { status: "unknown", pid: p };
+    if (a.k.toLowerCase() !== k) return { status: "badkey", pid: p };
+    if (!C.sequences[a.seq]) return { status: "badseq", pid: p };
+    return { status: "ok", pid: p, seq: a.seq };
+  }
+
   function initSetup() {
-    const seqSel = $("#in-seq");
-    Object.keys(C.sequences).forEach(function (k) {
-      const o = document.createElement("option");
-      o.value = k;
-      o.textContent = k + "：" + C.sequences[k].map(function (b) {
-        return (b.friction === "zero" ? "零" : "微") + (b.scent === "high" ? "高" : "低") + "(" + b.set + ")";
-      }).join(" → ");
-      seqSel.appendChild(o);
-    });
-    $("#in-scale-row").classList.toggle("hidden", !DEBUG);
     $("#cfg-version").textContent = C.version;
+    $("#in-scale-row").classList.toggle("hidden", !DEBUG);
     $("#btn-start").addEventListener("click", startSession);
+
+    const r = resolveAssignment();
+    const box = $("#assign-box");
+    const manual = $("#manual-fields");
+    const startBtn = $("#btn-start");
+
+    if (r.status === "ok") {
+      ASSIGNED = { pid: r.pid, seq: r.seq };
+      manual.classList.add("hidden");
+      box.className = "assign ok";
+      box.innerHTML = "<div class='assign-pid'>" + esc(r.pid) + "</div>" +
+        "<div>序列 " + r.seq + "：" + seqLabel(r.seq) + "</div>";
+      const prev = L.listSaved().filter(function (s) { return s.data.meta.participant === r.pid; });
+      if (prev.length) {
+        const done = prev.filter(function (s) { return s.data.meta.finishedAt && s.data.meta.completed; }).length;
+        $("#dup-warn").classList.remove("hidden");
+        $("#dup-msg").textContent = "這台裝置已有 " + r.pid + " 的 " + prev.length + " 份資料（完成 " + done + " 份）。確定要再施測一次嗎？";
+        startBtn.disabled = true;
+        $("#dup-ok").addEventListener("change", function () { startBtn.disabled = !this.checked; });
+      }
+    } else if (r.status === "none" && DEBUG) {
+      box.className = "assign warn";
+      box.textContent = "測試模式：手動輸入編號與序列（正式施測請用受試者專屬網址）";
+      const seqSel = $("#in-seq");
+      Object.keys(C.sequences).forEach(function (k) {
+        const o = document.createElement("option");
+        o.value = k; o.textContent = k + "：" + seqLabel(k);
+        seqSel.appendChild(o);
+      });
+    } else {
+      manual.classList.add("hidden");
+      startBtn.classList.add("hidden");
+      box.className = "assign error";
+      box.textContent = {
+        none: "請使用受試者專屬網址開啟（網址後面要有 ?p=編號&k=檢查碼）。",
+        unknown: "指派表中沒有編號「" + r.pid + "」，請確認網址。",
+        badkey: "編號「" + r.pid + "」的檢查碼不符，請確認網址是否打錯。",
+        badseq: "編號「" + r.pid + "」指派的序列不存在，請檢查 config.js。"
+      }[r.status];
+    }
     renderSaved();
   }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; }); }
 
   function renderSaved() {
     const box = $("#saved-list");
@@ -49,7 +105,7 @@
       const m = s.data.meta;
       const row = document.createElement("div");
       row.className = "saved-row";
-      row.innerHTML = "<span>P" + m.participant + "｜序列 " + m.sequence + "｜" + new Date(m.startedWall).toLocaleString() +
+      row.innerHTML = "<span>" + esc(m.participant) + "｜序列 " + m.sequence + "｜" + new Date(m.startedWall).toLocaleString() +
         "｜" + s.data.patches.length + " patches" + (m.finishedAt ? "" : "（未完成）") + "</span>";
       const ex = document.createElement("button"); ex.textContent = "匯出";
       ex.onclick = function () { L.exportData(s.data); };
@@ -61,10 +117,17 @@
   }
 
   function startSession() {
-    const pid = $("#in-pid").value.trim();
-    if (!pid) { alert("請輸入受試者編號"); return; }
-    const seq = $("#in-seq").value;
+    let pid, seq, source;
+    if (ASSIGNED) {
+      pid = ASSIGNED.pid; seq = ASSIGNED.seq; source = "url";
+    } else if (DEBUG) {
+      pid = $("#in-pid").value.trim(); seq = $("#in-seq").value; source = "manual_debug";
+      if (!pid) { alert("請輸入受試者編號"); return; }
+    } else {
+      return;
+    }
     const timeScale = DEBUG ? Number($("#in-scale").value) || 1 : 1;
+    const nPrev = L.listSaved().filter(function (s) { return s.data.meta.participant === pid; }).length;
 
     const blocks = [];
     if (C.practice.enabled) {
@@ -77,7 +140,8 @@
     });
 
     S = { pid: pid, seq: seq, timeScale: timeScale, blocks: blocks, blockIdx: -1 };
-    L.start({ participant: pid, sequence: seq, timeScale: timeScale, configVersion: C.version, config: C });
+    L.start({ participant: pid, sequence: seq, assignmentSource: source, attempt: nPrev + 1,
+              url: location.href, debug: DEBUG, timeScale: timeScale, configVersion: C.version, config: C });
     L.log("session_start");
 
     try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch (e) { /* iOS 不支援 */ }

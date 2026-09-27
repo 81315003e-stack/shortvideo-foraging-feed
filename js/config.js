@@ -3,7 +3,7 @@
  * 每次正式施測前，請把 version 改成新的值；它會寫進每一份資料的 meta。
  */
 window.EXP_CONFIG = {
-  version: "0.2.0-prototype",
+  version: "0.3.0-prototype",
 
   // 每個正式 block 的時間預算（秒）。時間到就結束 block，不論看到第幾支。
   // proposal：4 個 block，每個 5 分鐘。
@@ -45,6 +45,41 @@ window.EXP_CONFIG = {
       { id: "P01", scent: "na", falseScent: false, durationSec: 20, src: null, cues: [] },
       { id: "P02", scent: "na", falseScent: false, durationSec: 20, src: null, cues: [] }
     ]
+  },
+
+  /*
+   * 受試者指派表：每位受試者一個專屬網址 index.html?p={編號}&k={檢查碼}。
+   *   由 tools/make_assignments.py 產生（亂數種子 20260927）：每 8 人一輪，序列 1–8 在每輪內隨機打亂。
+   *   檢查碼只用來防止網址打錯，不是密碼（這個檔案是公開的）。
+   *   受試者退出或資料排除時，新增一個補位編號沿用同一個序列，例如
+   *     "P03R": { seq: "8", k: "xxxx" }
+   *   編號不可包含姓名等可識別資訊；編號與真實身分的對照表另外保存，不放進 repo。
+   */
+  assignments: {
+    "P01": { seq: "6", k: "6737" },
+    "P02": { seq: "2", k: "4346" },
+    "P03": { seq: "7", k: "29d0" },
+    "P04": { seq: "5", k: "c1f3" },
+    "P05": { seq: "1", k: "9738" },
+    "P06": { seq: "3", k: "c2a3" },
+    "P07": { seq: "8", k: "8a6f" },
+    "P08": { seq: "4", k: "6a46" },
+    "P09": { seq: "2", k: "9c15" },
+    "P10": { seq: "4", k: "d8c9" },
+    "P11": { seq: "5", k: "2e75" },
+    "P12": { seq: "8", k: "aa6d" },
+    "P13": { seq: "1", k: "664e" },
+    "P14": { seq: "6", k: "bab1" },
+    "P15": { seq: "3", k: "f372" },
+    "P16": { seq: "7", k: "26a6" },
+    "P17": { seq: "6", k: "aaf3" },
+    "P18": { seq: "5", k: "1ebb" },
+    "P19": { seq: "4", k: "3143" },
+    "P20": { seq: "2", k: "26dc" },
+    "P21": { seq: "1", k: "61bb" },
+    "P22": { seq: "7", k: "b278" },
+    "P23": { seq: "3", k: "605d" },
+    "P24": { seq: "8", k: "93cd" }
   },
 
   /*

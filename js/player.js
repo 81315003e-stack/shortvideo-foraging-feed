@@ -74,31 +74,49 @@
     if (this.posEl) this.posEl.textContent = fmt(p);
   };
 
+  // 所有影片共用同一個 <video> 元素：iOS 只要第一次播放是在使用者觸控中開始，
+  // 之後同一元素換片、自動播下一支都能帶聲音播放；每支影片新建元素則可能被擋。
+  let SHARED = null;
+  function sharedVideo() {
+    if (!SHARED) {
+      SHARED = document.createElement("video");
+      SHARED.className = "vid";
+      SHARED.setAttribute("playsinline", ""); SHARED.setAttribute("webkit-playsinline", "");
+      SHARED.preload = "auto";
+    }
+    return SHARED;
+  }
+
   function VideoPlayer(stage, timeScale) {
     this.stage = stage; this.timeScale = timeScale || 1; this.onEnded = null;
   }
   VideoPlayer.prototype.load = function (item) {
     const self = this;
     this.item = item;
-    this.stage.innerHTML = '<video class="vid" playsinline webkit-playsinline preload="auto"></video>' +
-      '<div class="progress"><div class="progress-fill"></div></div>';
-    this.v = this.stage.querySelector("video");
+    this.stage.innerHTML = '<div class="progress"><div class="progress-fill"></div></div>';
+    this.v = sharedVideo();
+    this.stage.insertBefore(this.v, this.stage.firstChild);
     this.fill = this.stage.querySelector(".progress-fill");
+    this.v.onended = function () { if (self.onEnded) self.onEnded(); };
+    this.v.ontimeupdate = function () {
+      if (self.v.duration) self.fill.style.width = (100 * self.v.currentTime / self.v.duration) + "%";
+    };
     this.v.src = item.src;
     this.v.playbackRate = this.timeScale;
-    this.v.addEventListener("ended", function () { if (self.onEnded) self.onEnded(); });
-    this.v.addEventListener("timeupdate", function () {
-      if (self.v.duration) self.fill.style.width = (100 * self.v.currentTime / self.v.duration) + "%";
-    });
+    this.v.defaultPlaybackRate = this.timeScale;
   };
-  VideoPlayer.prototype.play = function () { const p = this.v.play(); if (p && p.catch) p.catch(function (e) { console.warn(e); }); };
+  VideoPlayer.prototype.play = function () { const p = this.v.play(); if (p && p.catch) p.catch(function (e) { console.warn("play() 被擋：", e); }); };
   VideoPlayer.prototype.pause = function () { this.v.pause(); };
   VideoPlayer.prototype.isPlaying = function () { return !this.v.paused && !this.v.ended; };
   VideoPlayer.prototype.getPosMs = function () { return Math.round(this.v.currentTime * 1000); };
   VideoPlayer.prototype.getDurMs = function () {
     return this.v.duration ? Math.round(this.v.duration * 1000) : this.item.durationSec * 1000;
   };
-  VideoPlayer.prototype.stop = function () { if (this.v) { this.v.pause(); this.v.removeAttribute("src"); this.v.load(); } };
+  VideoPlayer.prototype.stop = function () {
+    if (!this.v) return;
+    this.v.pause(); this.v.onended = null; this.v.ontimeupdate = null;
+    this.v.removeAttribute("src"); this.v.load();
+  };
 
   function fmt(ms) {
     const s = Math.floor(ms / 1000);

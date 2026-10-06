@@ -93,6 +93,84 @@
       }[r.status];
     }
     renderSaved();
+    initMedia();
+  }
+
+  // ================= 影片 =================
+  // 影片存在本機 IndexedDB（js/media.js）。設定頁載入時先為已匯入的影片建立 object URL，開始時直接使用。
+  const MEDIA_URL = {};
+  function mediaGroups() {
+    const g = [];
+    if (C.practice && C.practice.enabled) g.push(["練習", C.practice.items]);
+    Object.keys(C.stimulusSets).forEach(function (k) { g.push([k, C.stimulusSets[k]]); });
+    return g;
+  }
+  function allMediaIds() {
+    return mediaGroups().reduce(function (a, g) { return a.concat(g[1].map(function (i) { return i.id; })); }, []);
+  }
+  function neededIds(seq) {
+    let ids = C.practice && C.practice.enabled ? C.practice.items.map(function (i) { return i.id; }) : [];
+    C.sequences[seq].forEach(function (b) { ids = ids.concat(C.stimulusSets[b.set].map(function (i) { return i.id; })); });
+    return ids;
+  }
+  function withMedia(items) {
+    return items.map(function (it) {
+      if (!MEDIA_URL[it.id]) return it;
+      const info = window.Media.info(it.id);
+      return Object.assign({}, it, { src: MEDIA_URL[it.id], durationSec: (info && info.durationSec) || it.durationSec });
+    });
+  }
+  function mb(b) { return (b / 1048576).toFixed(0) + " MB"; }
+
+  function initMedia() {
+    const box = $("#media-status");
+    if (!window.Media) { box.innerHTML = "<p class='media-miss'>影片模組沒有載入</p>"; return; }
+    window.Media.init().then(function () {
+      window.Media.persist().then(function (p) { MEDIA_STATE.persisted = p; refreshMedia(); });
+      refreshMedia();
+    }).catch(function (e) { box.innerHTML = "<p class='media-miss'>無法開啟本機影片庫：" + esc(e.message) + "</p>"; });
+
+    $("#media-input").addEventListener("change", function () {
+      const files = this.files; if (!files || !files.length) return;
+      const prog = $("#media-progress");
+      prog.textContent = "匯入中 0／" + files.length;
+      window.Media.importFiles(files, allMediaIds(), function (i, n) { prog.textContent = "匯入中 " + i + "／" + n; })
+        .then(function (r) {
+          prog.textContent = "完成：新增 " + r.added.length + "、取代 " + r.replaced.length +
+            (r.skipped.length ? "；檔名不在 config 中、未匯入 " + r.skipped.length + " 個（" + r.skipped.slice(0, 5).join("、") + (r.skipped.length > 5 ? "…" : "") + "）" : "") +
+            (r.failed.length ? "；失敗 " + r.failed.length + " 個" : "");
+          this.value = "";
+          refreshMedia();
+        }.bind(this));
+    });
+    $("#media-clear").addEventListener("click", function () {
+      if (!confirm("確定清除這台裝置上所有已匯入的影片？")) return;
+      window.Media.clear().then(function () {
+        Object.keys(MEDIA_URL).forEach(function (k) { delete MEDIA_URL[k]; });
+        $("#media-progress").textContent = "已清除";
+        refreshMedia();
+      });
+    });
+  }
+  const MEDIA_STATE = { persisted: null };
+
+  function refreshMedia() {
+    const M = window.Media;
+    const ids = allMediaIds().filter(function (id) { return M.has(id); });
+    Promise.all(ids.map(function (id) { return M.url(id).then(function (u) { if (u) MEDIA_URL[id] = u; }); })).then(function () {
+      let html = "";
+      const missing = [];
+      mediaGroups().forEach(function (g) {
+        const n = g[1].length;
+        const have = g[1].filter(function (i) { return M.has(i.id); }).length;
+        g[1].forEach(function (i) { if (!M.has(i.id)) missing.push(i.id); });
+        html += "<div class='media-row " + (have === n ? "ok" : "miss") + "'><span>" + esc(g[0]) + "</span><span>" + have + "／" + n + "</span></div>";
+      });
+      if (missing.length) html += "<p class='media-miss'>缺少：" + esc(missing.slice(0, 12).join("、")) + (missing.length > 12 ? "…等 " + missing.length + " 支" : "") + "</p>";
+      html += "<p class='muted small'>本機影片 " + M.count() + " 支，" + mb(M.totalBytes()) +
+        (MEDIA_STATE.persisted === true ? "｜已設為不自動清除" : MEDIA_STATE.persisted === false ? "｜瀏覽器未同意保留，空間不足時可能被清除" : "") + "</p>";
+      $("#media-status").innerHTML = html;
+    });
   }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return "&#" + c.charCodeAt(0) + ";"; }); }
@@ -127,21 +205,28 @@
       return;
     }
     const timeScale = DEBUG ? Number($("#in-scale").value) || 1 : 1;
+    const need = neededIds(seq);
+    const missing = need.filter(function (id) { return !MEDIA_URL[id]; });
+    if (missing.length && C.requireMedia && !DEBUG) {
+      alert("這位受試者的影片還缺 " + missing.length + " 支（" + missing.slice(0, 6).join("、") + (missing.length > 6 ? "…" : "") + "），請先在下方「影片」匯入。");
+      return;
+    }
     const nPrev = L.listSaved().filter(function (s) { return s.data.meta.participant === pid; }).length;
 
     const blocks = [];
     if (C.practice.enabled) {
-      blocks.push({ name: "practice", practice: true, friction: C.practice.friction, scent: "na", set: "P", items: C.practice.items, durationSec: null });
+      blocks.push({ name: "practice", practice: true, friction: C.practice.friction, scent: "na", set: "P", items: withMedia(C.practice.items), durationSec: null });
     }
     C.sequences[seq].forEach(function (b, i) {
       if (!C.stimulusSets[b.set]) throw new Error("config 找不到影片組：" + b.set);
       blocks.push({ name: "block" + (i + 1), practice: false, friction: b.friction, scent: b.scent, set: b.set,
-        items: C.stimulusSets[b.set], durationSec: C.blockDurationSec });
+        items: withMedia(C.stimulusSets[b.set]), durationSec: C.blockDurationSec });
     });
 
     S = { pid: pid, seq: seq, timeScale: timeScale, blocks: blocks, blockIdx: -1 };
     L.start({ participant: pid, sequence: seq, assignmentSource: source, attempt: nPrev + 1,
-              url: location.href, debug: DEBUG, timeScale: timeScale, configVersion: C.version, config: C });
+              url: location.href, debug: DEBUG,
+              media: { needed: need.length, missing: missing, persisted: MEDIA_STATE.persisted }, timeScale: timeScale, configVersion: C.version, config: C });
     L.log("session_start");
 
     try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch (e) { /* iOS 不支援 */ }
@@ -206,7 +291,7 @@
     B.patch = {
       participant: S.pid, sequence: S.seq, block: B.def.name, practice: B.def.practice,
       friction: B.def.friction, block_scent: B.def.scent, set: B.def.set, trial: B.trial, feed_pos: pos,
-      video_id: item.id, scent: item.scent, false_scent: item.falseScent,
+      video_id: item.id, scent: item.scent, false_scent: item.falseScent, is_placeholder: !item.src,
       via: via, visit_n: B.visits[pos],
       start_t: L.now(), end_t: null, dwell_ms: null, watched_ms: null, duration_ms: null, prop_watched: null,
       completed: false, outcome: null,

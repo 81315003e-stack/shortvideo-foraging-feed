@@ -1,6 +1,6 @@
 # 刺激影片編碼簿
 
-版本：v0.2（2026-10-06）｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
+版本：v0.3（2026-10-06）｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
 
 ## 0. 總則
 
@@ -10,6 +10,18 @@
 - **觀看方式**：用電腦播放器，可暫停、倒轉。**B 部分要先照第 3 節的「首看程序」完成，才可以反覆觀看**
 - **不確定時**：選最保守的選項，並在 `note` 欄寫下理由，不要自己創造新類別
 - **欄位名稱**：括號中的英文是編碼表的欄位名稱
+
+### 本編碼簿用語與論文用語對照
+
+編碼與介面設定沿用內部代碼，論文正文使用的術語不同，撰寫時請依右欄：
+
+| 編碼簿／介面代碼 | 論文用語 | 說明 |
+|---|---|---|
+| 高 scent、`high`、HS-A／HS-B | strong scent | 依 Pirolli & Card (1999) 的用語（scent「sufficiently strong」） |
+| 低 scent、`low`、LS-A／LS-B | weak scent | 同上 |
+| 摩擦條件 `micro` | micro-friction | 在提早離開時多一次確認點擊；**不使用 microboundary**，因為不預設使用者會停下來反思 |
+| 摩擦條件 `zero` | zero friction | 單一滑動即換片 |
+| mismatch、`falseScent` | scent–yield mismatch | 開場 scent 承諾的價值沒有在內容中兌現；依據是 Pirolli & Card (1999) 對 scent 的定義「(imperfect) perception」 |
 
 ### 編碼部分一覽
 
@@ -231,8 +243,10 @@
 |---|---|---|
 | 2026-09-27 | v0.1 | 初版 |
 | 2026-10-06 | v0.2 | 新增 D8–D11 開場視覺顯著性（依 Pratt & Bellomo, 1999）與 D12 內容價值（依 Wang et al., 2026）；信度表加入新欄位 |
+| 2026-10-06 | v0.3 | 第 0 節加入編碼代碼與論文用語對照（strong／weak scent、micro-friction、scent–yield mismatch） |
 
 ## 參考文獻
 
+- Pirolli, P., & Card, S. (1999). Information foraging. *Psychological Review, 106*(4), 643–675. https://doi.org/10.1037/0033-295X.106.4.643
 - Pratt, J., & Bellomo, C. N. (1999). Attentional capture in younger and older adults. *Aging, Neuropsychology, and Cognition, 6*(1), 19–31. https://doi.org/10.1076/anec.6.1.19.792
 - Wang, L., Shi, G., Elhai, J. D., Zhou, S., Zeng, Y., & Zheng, L. (2026). Problematic use of short-video apps among elderly adults: An extension of the TAM. *Social Science Computer Review, 44*(4), 790–806. https://doi.org/10.1177/08944393251338400

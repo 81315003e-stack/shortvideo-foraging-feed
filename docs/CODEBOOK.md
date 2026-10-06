@@ -1,6 +1,6 @@
 # 刺激影片編碼簿
 
-版本：v0.1（2026-09-27）｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
+版本：v0.2（2026-10-06）｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
 
 ## 0. 總則
 
@@ -18,7 +18,7 @@
 | A | 基本資訊 | 納入排除、控制變項 |
 | B | 開場 scent（前 10 秒） | 判定高／低 scent（RQ1、RQ2） |
 | C | Scent–yield mismatch | 判定 mismatch 與劇情崩壞點（H3） |
-| D | 製作特徵 | 控制變項、組間配對 |
+| D | 製作特徵、開場視覺顯著性、內容價值 | 控制變項、組間配對 |
 | E | 排除檢查 | 倫理與干擾 |
 
 ---
@@ -148,6 +148,29 @@
 | D6 | `watermark` | 浮水印或平台 logo | 無／有，已去除／有，無法去除 |
 | D7 | `loudness_lufs` | 轉檔前的整合響度 | 由程式量測，不用手編 |
 
+### D8–D11 開場視覺顯著性（只計前 10 秒）
+
+**為什麼要編**：突然出現的視覺刺激（abrupt onset）抓住高齡者注意力的效果比年輕人大，而且注意力被抓走後較難移開（Pratt & Bellomo, 1999）。高 scent 開場常伴隨快速剪接與彈出字幕；如果不控制，高 scent 影片停留較久，可能只是視覺刺激由下而上抓住注意力，而不是受試者評估內容後選擇留下。這些欄位用於組間配對與分析時的共變項。
+
+| 代碼 | 欄位 | 說明 | 選項或格式 |
+|---|---|---|---|
+| D8 | `cut_count_10s` | 前 10 秒的鏡頭切換次數 | 整數；先用程式偵測（見選片標準第 8 節），再由編碼者逐一確認，刪除誤判、補上漏判 |
+| D9 | `caption_anim` | 前 10 秒是否有字幕或文字**以動畫方式彈出**（放大、跳動、閃爍、逐字飛入） | 0／1；一般淡入或直接出現的對白字幕不算 |
+| D10 | `abrupt_zoom_flash` | 前 10 秒是否有**突然**放大、急推鏡頭、閃白或畫面震動 | 0／1；緩慢推鏡不算 |
+| D11 | `salience_note` | 其他明顯的視覺突發刺激（例如貼圖彈出、特效爆炸） | 文字；沒有就留空 |
+
+### D12 內容價值（`content_value`，看完整支影片後判斷）
+
+依 Wang et al.（2026）對短影音「享樂用途」與「實用用途」的區分。
+
+| 代碼 | 定義 | 範例 |
+|---|---|---|
+| `hedonic` | 主要提供娛樂、情緒或劇情享受 | 婆媳衝突劇、復仇打臉劇 |
+| `utilitarian` | 主要提供可以實際使用的資訊 | 健康知識、生活技巧、政策說明 |
+| `mixed` | 兩者都明顯存在 | 用短劇形式演出防詐騙知識 |
+
+**用途**：高 scent 與低 scent 兩組的內容價值分布要一致（選片標準第 4、6 節），避免 scent 與「享樂 vs. 實用」混在一起。
+
 ---
 
 ## E. 排除檢查
@@ -174,9 +197,9 @@
 
    | 欄位 | 資料尺度 |
    |---|---|
-   | B2a–B2d、C5、A6 | 名目 |
+   | B2a–B2d、C5、A6、D9、D10、D12 | 名目 |
    | B3、C2 | 次序 |
-   | B1、C3、C4 | 等距（時間點或次數） |
+   | B1、C3、C4、D8 | 等距（時間點或次數） |
 
    - α ≥ .80：可直接採用
    - .667 ≤ α < .80：可採用，但在論文中說明
@@ -207,3 +230,9 @@
 | 日期 | 版本 | 修改 |
 |---|---|---|
 | 2026-09-27 | v0.1 | 初版 |
+| 2026-10-06 | v0.2 | 新增 D8–D11 開場視覺顯著性（依 Pratt & Bellomo, 1999）與 D12 內容價值（依 Wang et al., 2026）；信度表加入新欄位 |
+
+## 參考文獻
+
+- Pratt, J., & Bellomo, C. N. (1999). Attentional capture in younger and older adults. *Aging, Neuropsychology, and Cognition, 6*(1), 19–31. https://doi.org/10.1076/anec.6.1.19.792
+- Wang, L., Shi, G., Elhai, J. D., Zhou, S., Zeng, Y., & Zheng, L. (2026). Problematic use of short-video apps among elderly adults: An extension of the TAM. *Social Science Computer Review, 44*(4), 790–806. https://doi.org/10.1177/08944393251338400

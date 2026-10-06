@@ -1,6 +1,6 @@
 # 刺激影片編碼簿
 
-版本：v0.3（2026-10-06）｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
+版本：v0.4（2026-10-06）｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
 
 ## 0. 總則
 
@@ -44,6 +44,9 @@
 | A3 | `source_url` | 原始網址 | 完整網址 |
 | A4 | `download_date` | 下載日期 | YYYY-MM-DD |
 | A5 | `orig_len_s`／`edit_len_s`／`edit_note` | 原始長度、剪輯後長度、刪除段落 | 秒；刪除段落以「起–迄秒」記錄 |
+| A5b | `series_title`／`episode_n` | 劇名、集數（從較長單集剪片段時填） | 文字；整數，不知道填空 |
+| A5c | `clip_start_s`／`clip_end_s` | 片段在原集中的起訖秒數 | 秒；原片不剪則留空 |
+| A5d | `clip_end_type` | 片段結尾類型（選片標準第 7.2 節） | `closure`（有收束）／`cliffhanger`（停在懸念）／`original`（原片結尾） |
 | A6 | `ai_generated` | 是否為 AI 生成 | 0 = 否（真人拍攝）；1 = 部分（真人畫面＋AI 配音或 AI 臉）；2 = 全部 AI 生成；9 = 無法判斷 |
 | A7 | `ai_cue` | A6 的判斷依據（可多選） | 臉部變形／表情不自然／口型不同步／AI 配音語調／畫面標示 AI／其他（寫明） |
 | A8 | `language` | 主要語言 | 國語／台語／客語／其他 |
@@ -244,6 +247,7 @@
 | 2026-09-27 | v0.1 | 初版 |
 | 2026-10-06 | v0.2 | 新增 D8–D11 開場視覺顯著性（依 Pratt & Bellomo, 1999）與 D12 內容價值（依 Wang et al., 2026）；信度表加入新欄位 |
 | 2026-10-06 | v0.3 | 第 0 節加入編碼代碼與論文用語對照（strong／weak scent、micro-friction、scent–yield mismatch） |
+| 2026-10-06 | v0.4 | 新增 A5b–A5d（劇名與集數、片段起訖秒數、結尾類型），配合選片標準 v0.4 從長集數剪片段 |
 
 ## 參考文獻
 

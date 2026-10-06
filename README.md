@@ -2,13 +2,13 @@
 
 高齡者短影音資訊覓食研究（Information Foraging Theory）的實驗介面。以網頁仿製全螢幕直式滑動 feed，記錄每一次觸碰、滑動與每支影片（patch）的離開方式，供 2×2 受試者內設計（介面摩擦 × 開場 scent）與 stimulated recall 訪談使用。
 
-目前是 **prototype**：沒有真實影片，以色塊與計時模擬播放。
+目前是 **prototype**。影片不放在網站上，施測前在手機的設定頁匯入（見「放入影片」）；測試模式下缺的影片以色塊與計時模擬播放。
 
 ## 執行
 
 - 本機：直接用瀏覽器開 `index.html`，或在專案資料夾執行 `python3 -m http.server 8000` 後開 `http://localhost:8000`
 - 手機施測：用**受試者專屬網址**開啟，例如 `https://81315003e-stack.github.io/shortvideo-foraging-feed/?p=P01&k=6737`。網址決定編號與平衡序列，清單見 `docs/ASSIGNMENTS.md`
-- 測試模式：網址加 `?debug=1`，頂端顯示目前影片、scent、狀態，並可設定播放加速；沒有專屬網址時可手動輸入編號與序列
+- 測試模式：網址加 `?debug=1`（可與專屬網址併用，例如 `?p=P01&k=6737&debug=1`），頂端顯示目前影片、scent、狀態，並可設定播放加速；沒有專屬網址時可手動輸入編號與序列；影片沒匯入也可以開始
 - 桌機測試：方向鍵上／下 = 滑動，空白鍵 = 輕點
 
 ## 流程
@@ -67,13 +67,23 @@
 
 所有參數在 `js/config.js`：block 時間、結束畫面（依條件開關與秒數）、摩擦類型（`none` / `confirm` / `delay`）、是否允許回看、觸控門檻、刺激清單。改設定後請更新 `version`，它會寫進每份資料。
 
-放入影片：把檔案放到 `stimuli/`，在 config 的 `src` 填路徑，並填 `cues`（影片內 scent 事件時間點）。
+### 放入影片
+
+影片只存在施測手機，不放進 repo，也不放在 GitHub Pages。
+
+1. 影片依 `docs/STIMULI_CRITERIA.md` 轉檔，檔名等於 config 的影片編號：`P01.mp4`、`P02.mp4`、`HS-A01.mp4` … `LS-B30.mp4`
+2. 把影片複製到施測手機（iPhone：「檔案」App；Android：檔案管理員）
+3. iPhone 先用 Safari 開網址，選「加入主畫面」，之後**都從主畫面開啟**（避免 Safari 清除久未使用網站的資料）
+4. 在設定頁「影片」按「匯入影片」，一次選取全部檔案。介面會顯示每組匯入幾支、缺哪些
+5. 正式施測時（`requireMedia: true`），受試者需要的影片沒有全部匯入就不能開始
+
+匯入的影片存在瀏覽器的 IndexedDB，換手機、換瀏覽器或清除網站資料後要重新匯入。介面使用影片的實際長度，config 的 `durationSec` 只在缺片時使用。`cues`（影片內 scent 事件時間點）仍在 config 填寫。
 
 ## 資料安全
 
 - 資料只存在施測裝置的瀏覽器（localStorage），不會上傳
 - **受試者資料不要 commit 進這個 repo**；`data/` 與匯出檔已列入 `.gitignore`
-- 真實影片可能涉及著作權，repo 若公開，`stimuli/` 也不要上傳
+- 真實影片可能涉及著作權，**不要上傳到 repo**；只存在施測手機與有權限控管的研究雲端
 
 ## 相關文件
 

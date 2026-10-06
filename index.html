@@ -25,6 +25,14 @@
     <label class="check"><input type="checkbox" id="dup-ok"> 我確認要重新施測</label>
   </div>
   <button id="btn-start" class="primary">開始</button>
+  <h2>影片</h2>
+  <div id="media-status" class="media-status"><p class="muted">讀取中…</p></div>
+  <div class="media-actions">
+    <label class="filebtn secondary">匯入影片<input type="file" id="media-input" multiple accept="video/mp4,video/*"></label>
+    <button id="media-clear" class="danger">清除所有影片</button>
+  </div>
+  <p id="media-progress" class="muted small"></p>
+  <p class="muted small">檔名要和 config 中的影片編號相同，例如 HS-A01.mp4、P01.mp4。影片只存在這台手機的瀏覽器裡，不會上傳。iPhone 請先「加入主畫面」，再從主畫面開啟本頁並匯入。</p>
   <h2>本機已存資料</h2>
   <div id="saved-list"></div>
   <p class="muted small">資料只存在這台裝置的瀏覽器裡。每位受試者結束後請立即匯出，並將檔案存到研究資料夾（不要放進 GitHub）。</p>
@@ -113,6 +121,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/logger.js"></script>
+<script src="js/media.js"></script>
 <script src="js/player.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -1,55 +1,39 @@
 """
-產生受試者指派表與專屬網址。
+產生受試者指派表（v1.0 起：2 個 block，4 個序列）。
 
-用法：
-    python3 tools/make_assignments.py            # 印出 config.js 用的 assignments 區塊與網址表
-    python3 tools/make_assignments.py --n 32     # 產生 32 人（4 輪）
+  序列 = block 順序（零摩擦先／微摩擦先）× 影片組對應（零摩擦用 A 組／用 B 組）
+  每 4 人一輪區組隨機化，序列 1–4 在每輪內隨機打亂（亂數種子 SEQ_SEED，可重現）。
+  檢查碼 k = sha1("{K_SEED}-{編號}") 前 4 碼；沿用 v0.3 的種子，所以每位受試者的網址不變。
 
-規則：
-- 每 8 人一輪，序列 1–8 在每輪內隨機打亂（區組隨機化），招募中途停止時各序列人數最多差 1
-- 亂數種子固定，同樣的參數永遠產生同樣的表，可供審查或複製研究
-- 檢查碼 k = sha1("{種子}-{編號}") 的前 4 碼，只用來防止網址打錯，不是密碼
-- 補位編號（例如 P03R）請手動加進 config.js，沿用被補位者的序列
+用法：python3 tools/make_assignments.py 24
+輸出：貼進 js/config.js 的 assignments，以及 docs/ASSIGNMENTS.md 的表格。
 """
-import argparse
-import hashlib
-import random
+import hashlib, random, sys
 
-SEED = 20260927
-N_SEQ = 8
+K_SEED = 20260927      # 檢查碼種子（不要改，改了網址會變）
+SEQ_SEED = 20261007    # 序列指派種子（v1.0）
 BASE = "https://81315003e-stack.github.io/shortvideo-foraging-feed/"
-
+LABEL = {"1": "零摩擦(A) → 微摩擦(B)", "2": "微摩擦(B) → 零摩擦(A)",
+         "3": "零摩擦(B) → 微摩擦(A)", "4": "微摩擦(A) → 零摩擦(B)"}
 
 def make(n):
-    rng = random.Random(SEED)
-    rows = []
-    rounds = -(-n // N_SEQ)
-    for r in range(rounds):
-        seqs = list(range(1, N_SEQ + 1))
-        rng.shuffle(seqs)
-        for i, s in enumerate(seqs):
-            idx = r * N_SEQ + i + 1
-            if idx > n:
-                break
-            pid = "P%02d" % idx
-            k = hashlib.sha1(f"{SEED}-{pid}".encode()).hexdigest()[:4]
-            rows.append((r + 1, pid, s, k))
-    return rows
-
-
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--n", type=int, default=24)
-    n = ap.parse_args().n
-    rows = make(n)
-    print("  assignments: {")
-    print(",\n".join('    "%s": { seq: "%d", k: "%s" }' % (p, s, k) for _, p, s, k in rows))
-    print("  },\n")
-    print("| 輪次 | 編號 | 序列 | 專屬網址 |")
-    print("|---|---|---|---|")
-    for r, p, s, k in rows:
-        print(f"| {r} | {p} | {s} | {BASE}?p={p}&k={k} |")
-
+    rng = random.Random(SEQ_SEED)
+    seqs = []
+    while len(seqs) < n:
+        r = list(LABEL); rng.shuffle(r); seqs += r
+    out = []
+    for i in range(n):
+        pid = f"P{i+1:02d}"
+        k = hashlib.sha1(f"{K_SEED}-{pid}".encode()).hexdigest()[:4]
+        out.append((pid, seqs[i], k))
+    return out
 
 if __name__ == "__main__":
-    main()
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else 24
+    rows = make(n)
+    print("  assignments: {")
+    print(",\n".join(f'    "{p}": {{ seq: "{s}", k: "{k}" }}' for p, s, k in rows))
+    print("  },\n")
+    print("| 編號 | 輪 | 序列 | 順序 | 網址 |\n|---|---|---|---|---|")
+    for i, (p, s, k) in enumerate(rows):
+        print(f"| {p} | {i//4+1} | {s} | {LABEL[s]} | {BASE}?p={p}&k={k} |")

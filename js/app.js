@@ -1,11 +1,11 @@
 /*
- * 主流程：設定 → 說明 → (練習) → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出
+ * 主流程：設定 → 說明 → (練習) → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出（v1.0：2 個 block，零摩擦／微摩擦）
  *
  * Patch outcome（每支影片的離開方式）：
  *   swipe_early   影片未播完就往上滑走（主動離開；微摩擦下為確認後離開）
  *   end_click     看完，在倒數內主動點「下一支」（主動繼續）
  *   end_swipe     看完，在倒數內往上滑（主動繼續）
- *   end_timeout   看完，倒數結束仍未動作，自動播下一支（沒有在做決定）
+ *   end_timeout   看完，倒數結束仍未動作，自動播下一支（等待自動播放）
  *   end_auto      看完，結束畫面關閉時直接自動播下一支
  *   swipe_back    往下滑回上一支（re-visit）
  *   block_timeout block 時間到，強制結束
@@ -22,12 +22,16 @@
 
   function show(id) {
     document.querySelectorAll(".screen").forEach(function (e) { e.classList.toggle("active", e.id === id); });
+    // feed 期間整頁不能捲動：沒有捲動，瀏覽器就不會在觀看中途隱藏或叫出網址列
+    document.documentElement.classList.toggle("in-feed", id === "screen-feed");
+    window.scrollTo(0, 0);
+    setAppHeight();
   }
 
   // ================= 設定頁 =================
   function seqLabel(k) {
     return C.sequences[k].map(function (b) {
-      return (b.friction === "zero" ? "零" : "微") + (b.scent === "high" ? "高" : "低") + "(" + b.set + ")";
+      return (b.friction === "zero" ? "零摩擦" : "微摩擦") + "(" + b.set + ")";
     }).join(" → ");
   }
 
@@ -86,14 +90,69 @@
       startBtn.classList.add("hidden");
       box.className = "assign error";
       box.textContent = {
-        none: "請使用受試者專屬網址開啟（網址後面要有 ?p=編號&k=檢查碼）。",
+        none: "請使用受試者專屬網址開啟，或在下方輸入受試者代碼。",
         unknown: "指派表中沒有編號「" + r.pid + "」，請確認網址。",
         badkey: "編號「" + r.pid + "」的檢查碼不符，請確認網址是否打錯。",
         badseq: "編號「" + r.pid + "」指派的序列不存在，請檢查 config.js。"
       }[r.status];
     }
+    if (r.status === "none" && !DEBUG) $("#code-entry").classList.remove("hidden");
     renderSaved();
     initMedia();
+    initDisplayCheck();
+  }
+
+  // ================= 受試者代碼輸入 =================
+  // 從主畫面捷徑（standalone）開啟時，網址固定是 start_url，帶不進 ?p=&k=。
+  // 研究者在這裡輸入代碼（例如「P05 9738」或貼上整個專屬網址），驗證方式與網址相同。
+  function submitCode() {
+    const raw = ($("#in-code").value || "").trim();
+    let p = "", k = "";
+    const m = raw.match(/[?&]p=([^&\s]+).*?[?&]k=([0-9a-fA-F]+)/);
+    if (m) { p = decodeURIComponent(m[1]); k = m[2]; }
+    else { const parts = raw.split(/[\s,，-]+/).filter(Boolean); p = (parts[0] || "").toUpperCase(); k = (parts[1] || "").toLowerCase(); }
+    const a = (C.assignments || {})[p];
+    if (!a || a.k.toLowerCase() !== k.toLowerCase()) { $("#code-msg").textContent = "代碼不正確，請確認編號與檢查碼。"; return; }
+    location.replace(location.pathname + "?p=" + encodeURIComponent(p) + "&k=" + k + "&via=code");
+  }
+
+  // ================= 顯示模式檢查 =================
+  // 手機瀏覽器的網址列、底部導航列會占去高度，而且捲動時有些瀏覽器會把網址列藏起來、有些不會。
+  // 正式施測請從主畫面捷徑開啟（standalone 或 fullscreen），並在開始時進入全螢幕；這裡顯示目前狀態。
+  function displayMode() {
+    if (document.fullscreenElement) return "fullscreen-api";
+    const modes = ["fullscreen", "standalone", "minimal-ui"];
+    for (let i = 0; i < modes.length; i++) if (window.matchMedia && matchMedia("(display-mode: " + modes[i] + ")").matches) return modes[i];
+    if (navigator.standalone) return "standalone";
+    return "browser";
+  }
+  function viewportInfo() {
+    const vv = window.visualViewport;
+    return {
+      mode: displayMode(),
+      innerW: window.innerWidth, innerH: window.innerHeight,
+      vvW: vv ? Math.round(vv.width) : null, vvH: vv ? Math.round(vv.height) : null,
+      screenW: screen.width, screenH: screen.height, dpr: window.devicePixelRatio,
+      orientation: (screen.orientation && screen.orientation.type) || null,
+      ua: navigator.userAgent
+    };
+  }
+  function setAppHeight() {
+    const vv = window.visualViewport;
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty("--app-h", Math.round(h) + "px");
+  }
+  function initDisplayCheck() {
+    const box = $("#display-check");
+    function render() {
+      const v = viewportInfo();
+      const ok = v.mode !== "browser" || !(C.display && C.display.warnIfBrowserTab);
+      box.innerHTML = "<div>顯示模式：<b>" + esc(v.mode) + "</b>｜畫面 " + v.innerW + "×" + v.innerH + "（裝置像素比 " + v.dpr + "）</div>" +
+        (ok ? "" : "<div>目前在一般瀏覽器分頁中，網址列與導航列會占去高度，捲動時也可能忽隱忽現。正式施測請先「加入主畫面」，再從主畫面開啟。</div>");
+      box.className = "display-check " + (ok ? "ok" : "warn");
+    }
+    render();
+    window.addEventListener("resize", render);
   }
 
   // ================= 影片 =================
@@ -215,21 +274,25 @@
 
     const blocks = [];
     if (C.practice.enabled) {
-      blocks.push({ name: "practice", practice: true, friction: C.practice.friction, scent: "na", set: "P", items: withMedia(C.practice.items), durationSec: null });
+      blocks.push({ name: "practice", practice: true, friction: C.practice.friction, set: "P", items: withMedia(C.practice.items), durationSec: null });
     }
     C.sequences[seq].forEach(function (b, i) {
       if (!C.stimulusSets[b.set]) throw new Error("config 找不到影片組：" + b.set);
-      blocks.push({ name: "block" + (i + 1), practice: false, friction: b.friction, scent: b.scent, set: b.set,
+      blocks.push({ name: "block" + (i + 1), practice: false, friction: b.friction, set: b.set,
         items: withMedia(C.stimulusSets[b.set]), durationSec: C.blockDurationSec });
     });
 
     S = { pid: pid, seq: seq, timeScale: timeScale, blocks: blocks, blockIdx: -1 };
     L.start({ participant: pid, sequence: seq, assignmentSource: source, attempt: nPrev + 1,
-              url: location.href, debug: DEBUG,
+              url: location.href, debug: DEBUG, viewport: viewportInfo(),
               media: { needed: need.length, missing: missing, persisted: MEDIA_STATE.persisted }, timeScale: timeScale, configVersion: C.version, config: C });
     L.log("session_start");
 
-    try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch (e) { /* iOS 不支援 */ }
+    // Android 瀏覽器可用全螢幕 API 隱藏網址列與導航列；iPhone 不支援，需從主畫面捷徑開啟。
+    try {
+      const fs = document.documentElement.requestFullscreen;
+      if (fs) { const pr = fs.call(document.documentElement, { navigationUI: "hide" }); if (pr && pr.catch) pr.catch(function () {}); }
+    } catch (e) { /* iOS 不支援 */ }
     show("screen-intro");
   }
 
@@ -240,7 +303,7 @@
     const def = S.blocks[S.blockIdx];
     B = { def: def, pos: -1, trial: 0, visits: {}, patch: null, player: null, state: "idle",
           startT: L.now(), timers: [], endScreenT: null };
-    L.log("block_start", ctx({ durationSec: def.durationSec, block_scent: def.scent, set: def.set }));
+    L.log("block_start", ctx({ durationSec: def.durationSec, set: def.set, viewport: viewportInfo() }));
     show("screen-feed");
     syncFlash();
     if (def.durationSec) {
@@ -264,7 +327,7 @@
     B.state = "ended";
     const dur = L.now() - B.startT;
     L.log("block_end", ctx({ reason: reason, actualMs: dur }));
-    L.addBlock({ block: B.def.name, practice: B.def.practice, friction: B.def.friction, block_scent: B.def.scent, set: B.def.set,
+    L.addBlock({ block: B.def.name, practice: B.def.practice, friction: B.def.friction, set: B.def.set,
                  start_t: B.startT, end_t: L.now(), actual_ms: dur, end_reason: reason,
                  n_patches: B.trial, time_estimate_min: null });
     if (B.def.practice) { show("screen-break"); $("#break-msg").textContent = "練習結束。準備好了就開始。"; return; }
@@ -290,8 +353,8 @@
     B.visits[pos] = (B.visits[pos] || 0) + 1;
     B.patch = {
       participant: S.pid, sequence: S.seq, block: B.def.name, practice: B.def.practice,
-      friction: B.def.friction, block_scent: B.def.scent, set: B.def.set, trial: B.trial, feed_pos: pos,
-      video_id: item.id, scent: item.scent, false_scent: item.falseScent, is_placeholder: !item.src,
+      friction: B.def.friction, set: B.def.set, trial: B.trial, feed_pos: pos,
+      video_id: item.id, end_type: item.endType || null, is_placeholder: !item.src, vp_h: window.innerHeight,
       via: via, visit_n: B.visits[pos],
       start_t: L.now(), end_t: null, dwell_ms: null, watched_ms: null, duration_ms: null, prop_watched: null,
       completed: false, outcome: null,
@@ -306,7 +369,7 @@
     B.player.onEnded = onVideoEnded;
     B.patch.duration_ms = item.durationSec * 1000;
     B.state = "playing";
-    L.log("patch_start", ctx({ via: via, feed_pos: pos, scent: item.scent, false_scent: item.falseScent }));
+    L.log("patch_start", ctx({ via: via, feed_pos: pos, end_type: item.endType || null }));
     B.player.play();
     updateDebug();
   }
@@ -426,12 +489,14 @@
   function onDown(e) {
     if (!B || B.state === "ended" || B.state === "idle") return;
     if (e.target.closest("button")) return;
-    G = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+    const eg = (C.gesture && C.gesture.edgeGuardPx) || 0;
+    G = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId,
+          edge: e.clientY < eg || e.clientY > window.innerHeight - eg };
     if (B.patch && B.patch.first_touch_ms === null) {
       B.patch.first_touch_ms = L.now() - B.patch.start_t;
       L.log("first_touch", ctx({ latency_ms: B.patch.first_touch_ms }));
     }
-    L.log("touch_start", ctx({ x: Math.round(e.clientX), y: Math.round(e.clientY), input: e.pointerType }));
+    L.log("touch_start", ctx({ x: Math.round(e.clientX), y: Math.round(e.clientY), input: e.pointerType, edge_start: G.edge, vp_h: window.innerHeight }));
   }
   function onMove(e) {
     if (!G || e.pointerId !== G.id) return;
@@ -448,7 +513,7 @@
     const dist = Math.abs(dyRaw), dur = performance.now() - G.t;
     const v = dur > 0 ? Math.round(1000 * dist / dur) / 1000 : 0; // px/ms
     const g = C.gesture;
-    const meta = { dy: Math.round(up), dx: Math.round(dx), dur_ms: Math.round(dur), v_px_ms: v, input: e.pointerType };
+    const meta = { dy: Math.round(up), dx: Math.round(dx), dur_ms: Math.round(dur), v_px_ms: v, input: e.pointerType, edge_start: G.edge };
     G = null;
     if (!B || !B.patch) return;
     L.log("touch_end", ctx(meta));
@@ -514,7 +579,7 @@
     const raw = $("#est-val").value.trim();
     if (raw === "" || isNaN(Number(raw))) { $("#est-val").focus(); return; }
     const v = Number(raw);
-    L.log("time_estimate", { block: B.def.name, friction: B.def.friction, block_scent: B.def.scent, estimate_min: v });
+    L.log("time_estimate", { block: B.def.name, friction: B.def.friction, estimate_min: v });
     const snap = L.snapshot();
     const b = snap.blocks[snap.blocks.length - 1];
     if (b) b.time_estimate_min = v;
@@ -555,14 +620,27 @@
     const d = $("#debug");
     d.classList.remove("hidden");
     if (!B || !B.patch) { d.textContent = ""; return; }
-    d.textContent = B.def.name + "｜" + B.def.friction + "×" + B.def.scent + "｜" + B.def.set + "｜#" + B.patch.trial + " " + B.patch.video_id +
-      "｜scent:" + B.patch.scent + (B.patch.false_scent ? "(false)" : "") + "｜" + B.state;
+    d.textContent = B.def.name + "｜" + B.def.friction + "｜" + B.def.set + "｜#" + B.patch.trial + " " + B.patch.video_id +
+      "｜結尾:" + B.patch.end_type + "｜" + B.state + "｜" + displayMode() + " " + window.innerWidth + "×" + window.innerHeight;
   }
   if (DEBUG) setInterval(updateDebug, 250);
 
   // ================= 綁定 =================
+  setAppHeight();
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", setAppHeight);
+  window.addEventListener("resize", function () {
+    setAppHeight();
+    if (S) L.log("viewport_change", Object.assign(B ? ctx() : {}, { viewport: viewportInfo() }));
+  });
+  document.addEventListener("fullscreenchange", function () {
+    setAppHeight();
+    if (S) L.log("fullscreen_change", Object.assign(B ? ctx() : {}, { fullscreen: !!document.fullscreenElement }));
+  });
+
   document.addEventListener("DOMContentLoaded", function () {
     initSetup();
+    $("#btn-code").addEventListener("click", submitCode);
+    $("#in-code").addEventListener("keydown", function (e) { if (e.key === "Enter") submitCode(); });
     const feed = $("#screen-feed");
     feed.addEventListener("pointerdown", onDown);
     feed.addEventListener("pointermove", onMove);

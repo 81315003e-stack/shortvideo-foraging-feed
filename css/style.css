@@ -32,7 +32,9 @@ button { font: inherit; border: 0; border-radius: 12px; padding: 12px 18px; curs
 .saved-row button { padding: 6px 10px; font-size: .85rem; }
 
 /* ---------- Feed ---------- */
-.feed.active { position: fixed; inset: 0; background: #000; overflow: hidden; touch-action: none;
+/* 用 --app-h（由 JS 依 visualViewport 設定）固定 feed 高度；網址列、導航列、瀏海由 safe-area 與 display-mode 處理 */
+html.in-feed, html.in-feed body { overflow: hidden; height: 100%; overscroll-behavior: none; }
+.feed.active { position: fixed; top: 0; left: 0; right: 0; height: var(--app-h, 100dvh); background: #000; overflow: hidden; touch-action: none;
   user-select: none; -webkit-user-select: none; }
 #stage { position: absolute; inset: 0; transition: transform .12s ease-out; }
 .ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -45,7 +47,8 @@ button { font: inherit; border: 0; border-radius: 12px; padding: 12px 18px; curs
 .progress { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom); height: 4px; background: rgba(255,255,255,.2); }
 .progress-fill { height: 100%; width: 0; background: rgba(255,255,255,.9); }
 
-.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10; }
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .overlay.dim { background: rgba(0,0,0,.55); }
 #ov-end { background: rgba(0,0,0,.35); }
 .sheet { background: #fff; color: var(--fg); border-radius: 20px; padding: 28px 24px; display: flex; flex-direction: column;
@@ -93,3 +96,10 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .media-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
 label.filebtn { display: inline-block; border-radius: 12px; padding: 12px 18px; cursor: pointer; margin: 0; font-weight: 400; }
 label.filebtn input { display: none; }
+
+/* ---------- 顯示模式與代碼輸入 ---------- */
+.display-check { margin: 12px 0; padding: 10px 14px; border-radius: 12px; font-size: .85rem; line-height: 1.6; }
+.display-check.ok { background: #eef4ff; border: 1px solid #b9cdf3; }
+.display-check.warn { background: #fff6e0; border: 1px solid #f0c96b; }
+#code-entry { margin: 8px 0 16px; }
+#code-entry label { margin-bottom: 8px; }

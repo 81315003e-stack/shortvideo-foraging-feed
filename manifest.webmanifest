@@ -1,0 +1,22 @@
+{
+ "name": "短影音瀏覽實驗",
+ "short_name": "瀏覽實驗",
+ "start_url": "./",
+ "scope": "./",
+ "display": "fullscreen",
+ "display_override": [
+  "fullscreen",
+  "standalone"
+ ],
+ "orientation": "portrait",
+ "background_color": "#000000",
+ "theme_color": "#000000",
+ "icons": [
+  {
+   "src": "icon.svg",
+   "sizes": "any",
+   "type": "image/svg+xml",
+   "purpose": "any"
+  }
+ ]
+}

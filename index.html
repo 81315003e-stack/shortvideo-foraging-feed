@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
 <title>短影音瀏覽實驗</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,6 +18,12 @@
   <h1>短影音瀏覽實驗</h1>
   <p class="muted">研究者設定頁｜config <span id="cfg-version"></span></p>
   <div id="assign-box" class="assign"></div>
+  <div id="code-entry" class="hidden">
+    <label>受試者代碼<input id="in-code" autocomplete="off" autocapitalize="characters" placeholder="例如 P05 9738，或貼上專屬網址"></label>
+    <button id="btn-code" class="secondary">載入</button>
+    <p id="code-msg" class="muted small"></p>
+  </div>
+  <div id="display-check" class="display-check"></div>
   <div id="manual-fields">
     <label>受試者編號<input id="in-pid" autocomplete="off" placeholder="例如 T01"></label>
     <label>平衡序列<select id="in-seq"></select></label>
@@ -32,7 +41,7 @@
     <button id="media-clear" class="danger">清除所有影片</button>
   </div>
   <p id="media-progress" class="muted small"></p>
-  <p class="muted small">檔名要和 config 中的影片編號相同，例如 HS-A01.mp4、P01.mp4。影片只存在這台手機的瀏覽器裡，不會上傳。iPhone 請先「加入主畫面」，再從主畫面開啟本頁並匯入。</p>
+  <p class="muted small">檔名要和 config 中的影片編號相同，例如 A01.mp4、B12.mp4、P01.mp4。影片只存在這台手機的瀏覽器裡，不會上傳。iPhone 請先「加入主畫面」，再從主畫面開啟本頁並匯入。</p>
   <h2>本機已存資料</h2>
   <div id="saved-list"></div>
   <p class="muted small">資料只存在這台裝置的瀏覽器裡。每位受試者結束後請立即匯出，並將檔案存到研究資料夾（不要放進 GitHub）。</p>

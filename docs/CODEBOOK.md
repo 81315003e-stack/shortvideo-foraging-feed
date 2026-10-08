@@ -1,6 +1,6 @@
 # 刺激影片編碼簿
 
-版本：v1.0（2026-10-07）｜對應 proposal v3：*No Ending in Sight*｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
+版本：v1.1（2026-10-08）｜對應 proposal v3：*No Ending in Sight*｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
 
 > v1.0 依研究方向調整（設計紀錄 D18、D20）大幅縮減：只保留基本資訊、**結尾類型**、少數製作特徵與排除檢查。原本的開場 scent、scent–yield mismatch、視覺顯著性與內容價值編碼，完整保存在 [`archive/CODEBOOK_v0.5_scent.md`](archive/CODEBOOK_v0.5_scent.md)，留給後續研究使用。
 
@@ -19,6 +19,7 @@
 |---|---|---|
 | `end_type = open` | open ending | 故事還沒走到結局就停住，接下來的發展留給觀眾 |
 | `end_type = closed` | closed ending | 場景或故事在影片內走到一個結局 |
+| `setup_given` | setup | 前因有沒有在影片內交代；沒有交代的影片不進正式片庫 |
 | 摩擦條件 `zero` | zero friction | 單一滑動即換片 |
 | 摩擦條件 `micro` | micro-friction | 提早離開時多一次確認點擊；不使用 microboundary，因為不預設使用者會停下來反思 |
 | 一支影片 | patch | 依 Pirolli & Card (1999)；滑走 = 離開 patch，往回滑 = 回訪 patch |
@@ -30,7 +31,7 @@
 | 部分 | 內容 | 目的 |
 |---|---|---|
 | A | 基本資訊 | 來源紀錄、納入排除、組間配對 |
-| B | 結尾類型 | **主要分析變項**（RQ1、RQ2） |
+| B | 前因與結尾類型 | 前因為納入條件；結尾類型為**主要分析變項**（RQ1、RQ2） |
 | C | 製作特徵 | 描述與組間配對 |
 | D | 排除檢查 | 倫理與干擾 |
 
@@ -56,7 +57,22 @@
 
 ---
 
-## B. 結尾類型
+## B. 前因與結尾類型
+
+一支完整的故事包含兩件事：**前因有沒有交代**、**結局有沒有給**。兩者分開編碼，因為缺的東西不同，觀眾的反應也不同：前因沒交代，觀眾會看不懂（困惑）；結局沒給，觀眾看懂了但不知道後來怎樣（懸念）。本研究要比較的是後者，所以正式片庫只收前因有交代的影片，open／closed 的差別只剩結局。
+
+### B0 前因（`setup_given`）
+
+**先編 B0，再編 B1。**
+
+| 代碼 | 定義 |
+|---|---|
+| `1` | 影片內交代了衝突或情境的起因：觀眾不需要看前集，就知道角色是誰、彼此什麼關係、為什麼會有這個衝突 |
+| `0` | 影片從衝突中間開始，起因要看前集或劇情簡介才知道；只有「前情提要」字卡而沒有畫面交代，也編 `0` |
+
+- 判斷時只看這支影片本身，不參考劇名、描述或 hashtag
+- `setup_given = 0` 的影片**不進正式片庫**（選片標準第 2 節納入條件 2），可作練習或備用
+- 剪輯片段若從第 1 集第 0 秒開始，通常為 `1`，但仍要確認
 
 ### B1 結尾類型（`end_type`）
 
@@ -125,7 +141,7 @@
 
 1. **訓練**：兩位編碼者一起編 10 支**不在片庫中**的影片，逐項討論，必要時修訂本編碼簿（版本號加 0.1，寫進修訂紀錄）
 2. **獨立編碼**：每人獨立編完全部候選影片
-3. **信度計算**：`end_type` 與 `ai_generated` 計算 Krippendorff's α（名目尺度）
+3. **信度計算**：`setup_given`、`end_type` 與 `ai_generated` 計算 Krippendorff's α（名目尺度）
    - α ≥ .80：可直接採用
    - .667 ≤ α < .80：可採用，但在論文中說明
    - α < .667：回到訓練步驟，修訂 B1 的定義或判斷原則後重編
@@ -142,7 +158,7 @@
 | `final_end_type` | `endType` | `open`／`closed`；介面把它寫進每支影片的資料列（`end_type`） |
 | `edit_len_s` | `durationSec` | 匯入影片後，介面會改用實際長度 |
 
-分析時，每支影片的資料列已經帶有 `end_type`，可以直接比較 open 與 closed 結尾之後的行為（往回滑、在結束畫面停留的時間、主動點下一支或等自動播放）。
+分析時，每支影片的資料列已經帶有 `end_type`；下一支影片的資料列帶有 `prev_end_type` 與 `prev_completed`，可以直接比較看完 open 與 closed 結尾之後的行為（下一支開始後往回滑、下一支多快被滑走）。
 
 ---
 
@@ -156,6 +172,7 @@
 | 2026-10-06 | v0.4 | 新增劇名與集數、片段起訖秒數、結尾類型 |
 | 2026-10-07 | v0.5 | 結尾類型改為 `open`／`closed` |
 | 2026-10-07 | v1.0 | 依 proposal v3 縮減：結尾類型獨立為 B 部分並加上判斷程序與原則；刪除開場 scent、mismatch、視覺顯著性、內容價值（保存於 `archive/CODEBOOK_v0.5_scent.md`）；新增 `end_note`；排除條件 D7 改為同一部劇 1 段；信度只計 `end_type` 與 `ai_generated` |
+| 2026-10-08 | v1.1 | B 部分加入前因（`setup_given`，B0）：前因沒交代的影片不進正式片庫；信度加計 `setup_given`；連結說明改為接縫欄位（`prev_end_type`） |
 
 ## 參考文獻
 

@@ -1,5 +1,5 @@
 /*
- * 主流程：設定 → 說明 → (練習) → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出（v1.2：2 個 10 分鐘 block，零摩擦／微摩擦，播完直接接下一支）
+ * 主流程：設定 → 說明 → (練習) → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出（v1.3：2 個 10 分鐘 block，零摩擦／微摩擦，播完直接接下一支；每組兩種播放順序）
  *
  * Patch outcome（每支影片的離開方式）：
  *   swipe_early   影片未播完就往上滑走（主動離開；微摩擦下為確認後離開）
@@ -49,7 +49,7 @@
     if (!a) return { status: "unknown", pid: p };
     if (a.k.toLowerCase() !== k) return { status: "badkey", pid: p };
     if (!C.sequences[a.seq]) return { status: "badseq", pid: p };
-    return { status: "ok", pid: p, seq: a.seq };
+    return { status: "ok", pid: p, seq: a.seq, order: String(a.order || "1") };
   }
 
   function initSetup() {
@@ -63,11 +63,12 @@
     const startBtn = $("#btn-start");
 
     if (r.status === "ok") {
-      ASSIGNED = { pid: r.pid, seq: r.seq };
+      ASSIGNED = { pid: r.pid, seq: r.seq, order: r.order };
       manual.classList.add("hidden");
       box.className = "assign ok";
       box.innerHTML = "<div class='assign-pid'>" + esc(r.pid) + "</div>" +
-        "<div>序列 " + r.seq + "：" + seqLabel(r.seq) + "</div>";
+        "<div>序列 " + r.seq + "：" + seqLabel(r.seq) + "</div>" +
+        "<div>播放順序 " + esc(r.order) + "</div>";
       const prev = L.listSaved().filter(function (s) { return s.data.meta.participant === r.pid; });
       if (prev.length) {
         const done = prev.filter(function (s) { return s.data.meta.finishedAt && s.data.meta.completed; }).length;
@@ -253,12 +254,22 @@
     });
   }
 
+  // v1.3：每組影片有兩種受限制的播放順序（config.stimulusOrders），避免每支影片永遠接在同一支後面
+  function orderedSet(set, order) {
+    const items = C.stimulusSets[set];
+    const ids = C.stimulusOrders && C.stimulusOrders[set] && C.stimulusOrders[set][order];
+    if (!ids) return items;
+    const byId = {}; items.forEach(function (it) { byId[it.id] = it; });
+    return ids.map(function (id) { if (!byId[id]) throw new Error("stimulusOrders 找不到影片：" + id); return byId[id]; });
+  }
+
   function startSession() {
-    let pid, seq, source;
+    let pid, seq, source, order = "1";
     if (ASSIGNED) {
-      pid = ASSIGNED.pid; seq = ASSIGNED.seq; source = "url";
+      pid = ASSIGNED.pid; seq = ASSIGNED.seq; order = ASSIGNED.order; source = "url";
     } else if (DEBUG) {
       pid = $("#in-pid").value.trim(); seq = $("#in-seq").value; source = "manual_debug";
+      order = params.get("o") || "1";   // 測試模式：網址加 &o=2 測試第 2 種順序
       if (!pid) { alert("請輸入受試者編號"); return; }
     } else {
       return;
@@ -279,11 +290,11 @@
     C.sequences[seq].forEach(function (b, i) {
       if (!C.stimulusSets[b.set]) throw new Error("config 找不到影片組：" + b.set);
       blocks.push({ name: "block" + (i + 1), practice: false, friction: b.friction, set: b.set,
-        items: withMedia(C.stimulusSets[b.set]), durationSec: C.blockDurationSec });
+        items: withMedia(orderedSet(b.set, order)), durationSec: C.blockDurationSec });
     });
 
-    S = { pid: pid, seq: seq, timeScale: timeScale, blocks: blocks, blockIdx: -1 };
-    L.start({ participant: pid, sequence: seq, assignmentSource: source, attempt: nPrev + 1,
+    S = { pid: pid, seq: seq, order: order, timeScale: timeScale, blocks: blocks, blockIdx: -1 };
+    L.start({ participant: pid, sequence: seq, order: order, assignmentSource: source, attempt: nPrev + 1,
               url: location.href, debug: DEBUG, viewport: viewportInfo(),
               media: { needed: need.length, missing: missing, persisted: MEDIA_STATE.persisted }, timeScale: timeScale, configVersion: C.version, config: C });
     L.log("session_start");
@@ -352,7 +363,7 @@
     B.pos = pos; B.trial++;
     B.visits[pos] = (B.visits[pos] || 0) + 1;
     B.patch = {
-      participant: S.pid, sequence: S.seq, block: B.def.name, practice: B.def.practice,
+      participant: S.pid, sequence: S.seq, order: S.order, block: B.def.name, practice: B.def.practice,
       friction: B.def.friction, set: B.def.set, trial: B.trial, feed_pos: pos,
       video_id: item.id, end_type: item.endType || null, is_placeholder: !item.src, vp_h: window.innerHeight,
       via: via, visit_n: B.visits[pos],
@@ -360,6 +371,7 @@
       completed: false, outcome: null,
       first_touch_ms: null, n_taps: 0, n_pauses: 0, n_aborted_swipes: 0,
       friction_shown: 0, friction_cancelled: 0, friction_ms: 0, dwell_net_ms: null,
+      first_exit_ms: null, n_exit_attempts: 0, early_exit: null, post_cancel_ms: null,
       end_screen_ms: null, end_decision_ms: null,
       leave_swipe_px: null, leave_swipe_ms: null, leave_swipe_v: null,
       // v1.2：接縫（seam）欄位，上一支怎麼結束、結尾類型為何
@@ -387,6 +399,11 @@
     p.completed = p.watched_ms >= p.duration_ms - 50;
     p.outcome = outcome;
     endFriction(); delete p._fT;
+    // v1.3：第一次主動離開（有效上滑）是否在 earlyExitSec 秒內；post_cancel_ms = 最後一次取消到離開的時間
+    const ex = (C.analysis && C.analysis.earlyExitSec) || 10;
+    p.early_exit = p.first_exit_ms !== null && p.first_exit_ms <= ex * 1000;
+    if (p._cancelT != null) p.post_cancel_ms = p.end_t - p._cancelT;
+    delete p._cancelT;
     p.dwell_net_ms = p.dwell_ms - p.friction_ms;
     if (B.endScreenT !== null) p.end_screen_ms = p.end_t - B.endScreenT;
     Object.assign(p, extra || {});
@@ -493,6 +510,7 @@
     if (B.state !== "friction") return;
     B.patch.friction_cancelled++;
     endFriction();
+    B.patch._cancelT = L.now();
     L.log("friction_cancel", ctx());
     clearOverlays();
     B.state = B.player.isPlaying() ? "playing" : "paused";
@@ -562,6 +580,9 @@
       return goNext("end_swipe", leave);
     }
     if (B.state === "playing" || B.state === "paused") {
+      // 有效上滑 = 一次主動離開嘗試（不論之後確認或取消）
+      B.patch.n_exit_attempts++;
+      if (B.patch.first_exit_ms === null) B.patch.first_exit_ms = L.now() - B.patch.start_t;
       const f = C.friction[B.def.friction];
       if (!f || f.type === "none") return goNext("swipe_early", leave);
       B.pendingLeave = leave;

@@ -1,6 +1,6 @@
 # 刺激影片編碼簿
 
-版本：v1.1（2026-10-08）｜對應 proposal v3：*No Ending in Sight*｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
+版本：v1.2（2026-10-08）｜對應 proposal v3：*No Ending in Sight*｜選片標準見 [`STIMULI_CRITERIA.md`](STIMULI_CRITERIA.md)｜編碼表範本：[`coding_sheet_template.csv`](coding_sheet_template.csv)
 
 > v1.0 依研究方向調整（設計紀錄 D18、D20）大幅縮減：只保留基本資訊、**結尾類型**、少數製作特徵與排除檢查。原本的開場 scent、scent–yield mismatch、視覺顯著性與內容價值編碼，完整保存在 [`archive/CODEBOOK_v0.5_scent.md`](archive/CODEBOOK_v0.5_scent.md)，留給後續研究使用。
 
@@ -50,10 +50,13 @@
 | A7 | `clip_start_s`／`clip_end_s` | 片段在原集中的起訖秒數（從長集數剪片段時填） | 秒；原片不剪則留空 |
 | A8 | `ai_generated` | 是否為 AI 生成 | 0 = 否（真人拍攝）；1 = 部分（真人畫面＋AI 配音或 AI 臉）；2 = 全部 AI 生成；9 = 無法判斷 |
 | A9 | `ai_cue` | A8 的判斷依據（可多選） | 臉部變形／表情不自然／口型不同步／AI 配音語調／畫面標示 AI／其他（寫明） |
+| A9b | `ai_evidence` | AI 生成的外部證據（選片時由研究者記錄，不需兩位編碼者） | `platform_label` = 平台標示 AI 生成（例如 TikTok 的 AI 標籤）；`creator_tag` = 創作者在標題、描述或 hashtag 自己標示 AI（例如 #AI短劇）；`none` = 沒有外部證據 |
 | A10 | `language` | 主要語言 | 國語／台語／客語／其他 |
 | A11 | `genre` | 劇情類型（可多選） | 家庭倫理／婆媳／祖孫／霸總愛情／復仇打臉／身分反轉／民間故事／生活喜劇／其他（寫明） |
 
 **A8 判斷原則**：至少要有一項 A9 的具體線索才能編 1 或 2；只憑「感覺像 AI」編 9。
+
+**AI 認定標準**：正式片庫只收 `ai_evidence` 為 `platform_label` 或 `creator_tag` 的影片，也就是平台或創作者有標示 AI。只靠畫面線索判斷（`none`）的影片不進正式片庫。A8、A9 仍要編，用來描述 AI 生成的程度（部分或全部），並檢查標示與畫面是否一致。
 
 ---
 
@@ -173,6 +176,7 @@
 | 2026-10-07 | v0.5 | 結尾類型改為 `open`／`closed` |
 | 2026-10-07 | v1.0 | 依 proposal v3 縮減：結尾類型獨立為 B 部分並加上判斷程序與原則；刪除開場 scent、mismatch、視覺顯著性、內容價值（保存於 `archive/CODEBOOK_v0.5_scent.md`）；新增 `end_note`；排除條件 D7 改為同一部劇 1 段；信度只計 `end_type` 與 `ai_generated` |
 | 2026-10-08 | v1.1 | B 部分加入前因（`setup_given`，B0）：前因沒交代的影片不進正式片庫；信度加計 `setup_given`；連結說明改為接縫欄位（`prev_end_type`） |
+| 2026-10-08 | v1.2 | 新增 A9b `ai_evidence`；AI 認定標準改為平台或創作者有標示 AI 才進正式片庫 |
 
 ## 參考文獻
 

@@ -372,6 +372,7 @@
       first_touch_ms: null, n_taps: 0, n_pauses: 0, n_aborted_swipes: 0,
       friction_shown: 0, friction_cancelled: 0, friction_ms: 0, dwell_net_ms: null,
       first_exit_ms: null, n_exit_attempts: 0, early_exit: null, post_cancel_ms: null,
+      repeat_after_cancel: null, completed_after_cancel: null,
       end_screen_ms: null, end_decision_ms: null,
       leave_swipe_px: null, leave_swipe_ms: null, leave_swipe_v: null,
       // v1.2：接縫（seam）欄位，上一支怎麼結束、結尾類型為何
@@ -404,6 +405,11 @@
     p.early_exit = p.first_exit_ms !== null && p.first_exit_ms <= ex * 1000;
     if (p._cancelT != null) p.post_cancel_ms = p.end_t - p._cancelT;
     delete p._cancelT;
+    // v1.3.1：取消後的行為，只在有取消時才有值
+    if (p.friction_cancelled > 0) {
+      p.repeat_after_cancel = !!p.repeat_after_cancel;
+      p.completed_after_cancel = p.completed;
+    }
     p.dwell_net_ms = p.dwell_ms - p.friction_ms;
     if (B.endScreenT !== null) p.end_screen_ms = p.end_t - B.endScreenT;
     Object.assign(p, extra || {});
@@ -582,6 +588,7 @@
     if (B.state === "playing" || B.state === "paused") {
       // 有效上滑 = 一次主動離開嘗試（不論之後確認或取消）
       B.patch.n_exit_attempts++;
+      if (B.patch.friction_cancelled > 0) B.patch.repeat_after_cancel = true;
       if (B.patch.first_exit_ms === null) B.patch.first_exit_ms = L.now() - B.patch.start_t;
       const f = C.friction[B.def.friction];
       if (!f || f.type === "none") return goNext("swipe_early", leave);

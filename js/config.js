@@ -3,7 +3,7 @@
  * 每次正式施測前，請把 version 改成新的值；它會寫進每一份資料的 meta。
  */
 window.EXP_CONFIG = {
-  version: "1.3.0-prototype",
+  version: "1.3.1-prototype",
 
   // 每個正式 block 的時間預算（秒）。時間到就結束 block，不論看到第幾支。
   // proposal v3：2 個 block（零摩擦、微摩擦），每個 10 分鐘。v1.1 曾設 15 分鐘，v1.2 考量長者疲勞改為 10 分鐘（設計紀錄 D23）。
@@ -32,7 +32,8 @@ window.EXP_CONFIG = {
   requireMedia: true,
 
   // v1.3 主要指標：下一支開始後 earlyExitSec 秒內是否出現第一次有效上滑（patches 的 early_exit）。
-  // pilot 後固定，正式資料收集前不要再改。
+  // 這只是「分析窗口」：影片不會在第 10 秒暫停，也不會出現任何提示；超過 10 秒的上滑照樣記錄，只是不算 early exit。
+  // 正式收案前依 pilot 的載入穩定度與上滑時間分布固定，不以「哪個門檻的 open／closed 差異最大」來選。
   analysis: { earlyExitSec: 10 },
 
   allowRevisit: true,   // 可否往下滑回上一支（re-visiting patch；RQ1 的主要行為之一）

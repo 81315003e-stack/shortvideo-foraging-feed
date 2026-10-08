@@ -3,18 +3,19 @@
  * 每次正式施測前，請把 version 改成新的值；它會寫進每一份資料的 meta。
  */
 window.EXP_CONFIG = {
-  version: "1.1.0-prototype",
+  version: "1.2.0-prototype",
 
   // 每個正式 block 的時間預算（秒）。時間到就結束 block，不論看到第幾支。
-  // proposal v3：2 個 block（零摩擦、微摩擦），每個 15 分鐘，接近長者平常一次滑短影音的時間，讓沉浸有機會出現。
-  blockDurationSec: 900,
+  // proposal v3：2 個 block（零摩擦、微摩擦），每個 10 分鐘。v1.1 曾設 15 分鐘，v1.2 考量長者疲勞改為 10 分鐘（設計紀錄 D23）。
+  blockDurationSec: 600,
 
   // 影片結束後的「下一支」倒數畫面，可依摩擦條件分開設定。
   //   enabled: false  → 影片結束立即自動播下一支（outcome = end_auto）
   //   enabled: true   → 顯示按鍵與倒數；點擊 = end_click，倒數結束 = end_timeout
+  // v1.2：兩個條件都關閉，播完直接接下一支，像短劇 App 連播（設計紀錄 D23）。
   endScreen: {
-    zero:  { enabled: true, countdownSec: 10 },
-    micro: { enabled: true, countdownSec: 10 }
+    zero:  { enabled: false, countdownSec: 10 },
+    micro: { enabled: false, countdownSec: 10 }
   },
 
   // 提早滑走（影片還沒播完）時的摩擦。

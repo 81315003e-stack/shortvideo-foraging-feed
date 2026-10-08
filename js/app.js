@@ -1,5 +1,5 @@
 /*
- * 主流程：設定 → 說明 → (練習) → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出（v1.0：2 個 block，零摩擦／微摩擦）
+ * 主流程：設定 → 說明 → (練習) → Block 1 → 時間估計 → 休息 → Block 2 → 時間估計 → 結束與匯出（v1.2：2 個 10 分鐘 block，零摩擦／微摩擦，播完直接接下一支）
  *
  * Patch outcome（每支影片的離開方式）：
  *   swipe_early   影片未播完就往上滑走（主動離開；微摩擦下為確認後離開）
@@ -359,9 +359,12 @@
       start_t: L.now(), end_t: null, dwell_ms: null, watched_ms: null, duration_ms: null, prop_watched: null,
       completed: false, outcome: null,
       first_touch_ms: null, n_taps: 0, n_pauses: 0, n_aborted_swipes: 0,
-      friction_shown: 0, friction_cancelled: 0,
+      friction_shown: 0, friction_cancelled: 0, friction_ms: 0, dwell_net_ms: null,
       end_screen_ms: null, end_decision_ms: null,
-      leave_swipe_px: null, leave_swipe_ms: null, leave_swipe_v: null
+      leave_swipe_px: null, leave_swipe_ms: null, leave_swipe_v: null,
+      // v1.2：接縫（seam）欄位，上一支怎麼結束、結尾類型為何
+      prev_video_id: B.prev ? B.prev.video_id : null, prev_end_type: B.prev ? B.prev.end_type : null,
+      prev_completed: B.prev ? B.prev.completed : null, prev_outcome: B.prev ? B.prev.outcome : null
     };
     const stage = $("#stage");
     B.player = window.createPlayer(item, stage, S.timeScale);
@@ -383,10 +386,13 @@
     p.prop_watched = Math.round(1000 * p.watched_ms / p.duration_ms) / 1000;
     p.completed = p.watched_ms >= p.duration_ms - 50;
     p.outcome = outcome;
+    endFriction(); delete p._fT;
+    p.dwell_net_ms = p.dwell_ms - p.friction_ms;
     if (B.endScreenT !== null) p.end_screen_ms = p.end_t - B.endScreenT;
     Object.assign(p, extra || {});
     L.log("patch_end", ctx({ outcome: outcome, dwell_ms: p.dwell_ms, watched_ms: p.watched_ms }));
     L.addPatch(p);
+    B.prev = { video_id: p.video_id, end_type: p.end_type, completed: p.completed, outcome: p.outcome };
     B.player.stop();
     clearOverlays();
     B.patch = null; B.endScreenT = null;
@@ -406,7 +412,7 @@
   function onVideoEnded() {
     if (!B || !B.patch) return;
     if (B.state === "friction") {
-      clearOverlays();
+      clearOverlays(); endFriction();
       L.log("friction_interrupted_by_end", ctx());
     }
     L.log("video_end", ctx());
@@ -453,6 +459,7 @@
   function showFriction() {
     const f = C.friction[B.def.friction];
     B.patch.friction_shown++;
+    B.patch._fT = L.now();
     B.state = "friction";
     L.log("friction_show", ctx({ frictionType: f.type }));
     if (f.type === "confirm") {
@@ -471,6 +478,12 @@
     }
   }
 
+  // 摩擦提示顯示的時間累加到 friction_ms；dwell_net_ms = dwell_ms − friction_ms
+  function endFriction() {
+    const p = B && B.patch; if (!p || p._fT == null) return;
+    p.friction_ms += L.now() - p._fT; p._fT = null;
+  }
+
   function frictionConfirm() {
     if (B.state !== "friction") return;
     L.log("friction_confirm", ctx({ by: "tap" }));
@@ -479,6 +492,7 @@
   function frictionCancel() {
     if (B.state !== "friction") return;
     B.patch.friction_cancelled++;
+    endFriction();
     L.log("friction_cancel", ctx());
     clearOverlays();
     B.state = B.player.isPlaying() ? "playing" : "paused";
